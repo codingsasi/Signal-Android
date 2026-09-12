@@ -21,9 +21,9 @@
 
     <color name="amber_500">#FFC107</color>
 
-    <color name="blue_400">#42A5F5</color>
-    <color name="blue_500">#2196F3</color>
-    <color name="blue_600">#1E88E5</color>
+    <color name="blue_400">#5C42F5</color>
+    <color name="blue_500">#3F21F3</color>
+    <color name="blue_600">#3F1EE5</color>
 
     <color name="grey_300">#E0E0E0</color>
     <color name="grey_400">#BDBDBD</color>

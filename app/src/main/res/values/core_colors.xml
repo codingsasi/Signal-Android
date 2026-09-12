@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="core_ultramarine">#2c6bed</color>
-    <color name="core_ultramarine_light">#6191f3</color>
-    <color name="core_ultramarine_dark">#1851b4</color>
-    <color name="core_ultramarine_icon">#3a76f0</color>
-    <color name="core_ultramarine_33">#552c6bed</color>
-    <color name="core_ultramarine_50">#802c6bed</color>
+    <color name="core_ultramarine">#742CED</color>
+    <color name="core_ultramarine_light">#9761F3</color>
+    <color name="core_ultramarine_dark">#4C18B4</color>
+    <color name="core_ultramarine_icon">#7D3AF0</color>
+    <color name="core_ultramarine_33">#55742CED</color>
+    <color name="core_ultramarine_50">#80742CED</color>
 
     <color name="core_green">#4caf50</color>
     <color name="core_yellow">#ffd624</color>

@@ -132,6 +132,7 @@ import org.signal.core.util.concurrent.LifecycleDisposable
 import org.signal.core.util.concurrent.ListenableFuture
 import org.signal.core.util.concurrent.addTo
 import org.signal.core.util.dp
+import org.signal.core.util.getParcelableCompat
 import org.signal.core.util.encourageNewBrowserTab
 import org.signal.core.util.logging.Log
 import org.signal.core.util.orNull
@@ -226,6 +227,11 @@ import org.thoughtcrime.securesms.conversation.SelectedConversationModel
 import org.thoughtcrime.securesms.conversation.ShowAdminsBottomSheetDialog
 import org.thoughtcrime.securesms.conversation.clicklisteners.PollVotesFragment
 import org.thoughtcrime.securesms.conversation.colors.ChatColors
+import org.thoughtcrime.securesms.conversation.flair.AnimatedTextGifFactory
+import org.thoughtcrime.securesms.conversation.flair.FlairBottomSheet
+import org.thoughtcrime.securesms.conversation.messageinfo.MessageInfoSheet
+import org.thoughtcrime.securesms.conversation.tags.MessageTagSheet
+import org.thoughtcrime.securesms.conversation.tags.TagDrawerSheet
 import org.thoughtcrime.securesms.conversation.colors.ColorizerV2
 import org.thoughtcrime.securesms.conversation.colors.RecyclerViewColorizer
 import org.thoughtcrime.securesms.conversation.drafts.DraftRepository
@@ -1484,7 +1490,8 @@ class ConversationFragment :
 
     ConversationItemSwipeCallback(
       SwipeAvailabilityProvider(),
-      this::handleReplyToMessage
+      this::handleReplyToMessage,
+      this::handleTagSwipe
     ).attachToRecyclerView(binding.conversationItemRecycler)
 
     viewModel
@@ -2578,6 +2585,45 @@ class ConversationFragment :
     )
   }
 
+  /**
+   * Handles an opt-in "flair" send: either renders the text into a looping video GIF and sends it as media,
+   * or sends the text wrapped in a spoiler so the recipient has to tap to reveal it. Regular messages are untouched.
+   */
+  private fun handleFlairResult(result: FlairBottomSheet.Result) {
+    when (result) {
+      is FlairBottomSheet.Result.Gif -> {
+        val appContext = requireContext().applicationContext
+        toast(R.string.FlairBottomSheet__creating_gif)
+        viewLifecycleOwner.lifecycleScope.launch {
+          val slide = try {
+            withContext(Dispatchers.Default) { AnimatedTextGifFactory.create(appContext, result.request) }
+          } catch (e: Exception) {
+            Log.w(TAG, "Failed to render animated text GIF", e)
+            toast(R.string.FlairBottomSheet__could_not_create_gif)
+            return@launch
+          }
+          sendMessageWithoutComposeInput(slide = slide)
+        }
+      }
+
+      is FlairBottomSheet.Result.TapToReveal -> {
+        val spoiler = BodyRangeList(
+          ranges = listOf(
+            BodyRangeList.BodyRange(start = 0, length = result.text.length, style = BodyRangeList.BodyRange.Style.SPOILER)
+          )
+        )
+        sendMessage(
+          body = result.text,
+          mentions = emptyList(),
+          bodyRanges = spoiler,
+          messageToEdit = null,
+          slideDeck = null,
+          linkPreviews = emptyList()
+        )
+      }
+    }
+  }
+
   private fun sendPoll(recipient: Recipient, poll: Poll) {
     val send = viewModel.sendPoll(recipient, poll)
 
@@ -2846,6 +2892,16 @@ class ConversationFragment :
       items.add(
         ActionItem(R.drawable.symbol_star_outline_24, resources.getString(R.string.conversation_selection__menu_unstar)) {
           handleUnstarMessages(selectedParts.map { it.conversationMessage.messageRecord.id }.toSet())
+          finishActionMode()
+        }
+      )
+    }
+
+    if (selectedParts.size == 1) {
+      items.add(
+        ActionItem(R.drawable.symbol_tag_24, resources.getString(R.string.conversation_selection__menu_tag)) {
+          val record = selectedParts.first().conversationMessage.messageRecord
+          MessageTagSheet.show(childFragmentManager, record.id, args.threadId)
           finishActionMode()
         }
       )
@@ -3274,6 +3330,29 @@ class ConversationFragment :
   private fun hideSpinner() {
     progressDialog?.dismissAllowingStateLoss()
     progressDialog = null
+  }
+
+  /** Swiping a message the opposite way to reply opens its private tag picker. */
+  private fun handleTagSwipe(conversationMessage: ConversationMessage) {
+    MessageTagSheet.show(childFragmentManager, conversationMessage.messageRecord.id, args.threadId)
+  }
+
+  /**
+   * Opens the private tag browser. Tags live only on this device, so nothing here is visible to anyone else.
+   */
+  private fun handleViewTaggedMessages() {
+    TagDrawerSheet.show(childFragmentManager, args.threadId)
+    childFragmentManager.setFragmentResultListener(TagDrawerSheet.REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+      val messageId = bundle.getLong(TagDrawerSheet.RESULT_MESSAGE_ID, -1L)
+      if (messageId > 0) {
+        disposables += viewModel
+          .moveToMessage(messageId)
+          .subscribeBy(
+            onSuccess = { moveToPosition(it) },
+            onError = { Log.w(TAG, "Could not jump to tagged message $messageId", it) }
+          )
+      }
+    }
   }
 
   private fun viewPinnedMessage(messageId: Long) {
@@ -3705,7 +3784,13 @@ class ConversationFragment :
 
     override fun onItemDoubleClick(item: MultiselectPart) {
       Log.d(TAG, "onItemDoubleClick")
-      onDoubleTapToEdit(item.conversationMessage)
+      val record = item.conversationMessage.messageRecord
+      if (!record.isOutgoing) {
+        // Double tap to edit only ever applies to our own messages, so the gesture is free on incoming ones.
+        MessageInfoSheet.show(childFragmentManager, record.id)
+      } else {
+        onDoubleTapToEdit(item.conversationMessage)
+      }
     }
 
     private fun onDoubleTapToEdit(conversationMessage: ConversationMessage) {
@@ -4395,6 +4480,10 @@ class ConversationFragment :
       startActivity(MediaOverviewActivity.forThread(requireContext(), args.threadId))
     }
 
+    override fun handleViewTaggedMessages() {
+      this@ConversationFragment.handleViewTaggedMessages()
+    }
+
     override fun handleAddShortcut() {
       val recipient: Recipient = viewModel.recipientSnapshot ?: return
       Log.i(TAG, "Creating home screen shortcut for recipient ${recipient.id}")
@@ -4598,6 +4687,7 @@ class ConversationFragment :
         ConversationReactionOverlay.Action.UNPIN_MESSAGE -> handleUnpinMessage(conversationMessage.messageRecord.id)
         ConversationReactionOverlay.Action.STAR_MESSAGE -> handleStarMessages(setOf(conversationMessage.messageRecord.id))
         ConversationReactionOverlay.Action.UNSTAR_MESSAGE -> handleUnstarMessages(setOf(conversationMessage.messageRecord.id))
+        ConversationReactionOverlay.Action.TAG_MESSAGE -> MessageTagSheet.show(childFragmentManager, conversationMessage.messageRecord.id, args.threadId)
       }
     }
   }
@@ -5231,6 +5321,13 @@ class ConversationFragment :
             CreatePollFragment.show(childFragmentManager)
             childFragmentManager.setFragmentResultListener(CreatePollFragment.REQUEST_KEY, requireActivity()) { _, bundle ->
               sendPoll(recipient, Poll.fromBundle(bundle))
+            }
+          }
+
+          AttachmentKeyboardButton.FLAIR -> {
+            FlairBottomSheet.show(childFragmentManager, composeText.textTrimmed.toString(), recipient.chatColors.asSingleColor())
+            childFragmentManager.setFragmentResultListener(FlairBottomSheet.REQUEST_KEY, requireActivity()) { _, bundle ->
+              bundle.getParcelableCompat(FlairBottomSheet.RESULT_KEY, FlairBottomSheet.Result::class.java)?.let { handleFlairResult(it) }
             }
           }
         }

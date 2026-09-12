@@ -724,6 +724,8 @@ public final class ConversationReactionOverlay extends FrameLayout {
       items.add(new ActionItem(R.drawable.symbol_pin_slash_24, getResources().getString(R.string.conversation_selection__menu_unpin_message), () -> handleActionItemClicked(Action.UNPIN_MESSAGE)));
     }
 
+    items.add(new ActionItem(R.drawable.symbol_tag_24, getResources().getString(R.string.conversation_selection__menu_tag), () -> handleActionItemClicked(Action.TAG_MESSAGE)));
+
     if (menuState.shouldShowStarMessage()) {
       items.add(new ActionItem(R.drawable.symbol_star_outline_24, getResources().getString(R.string.conversation_selection__menu_star), () -> handleActionItemClicked(Action.STAR_MESSAGE)));
     }
@@ -923,6 +925,7 @@ public final class ConversationReactionOverlay extends FrameLayout {
     PIN_MESSAGE,
     UNPIN_MESSAGE,
     STAR_MESSAGE,
-    UNSTAR_MESSAGE
+    UNSTAR_MESSAGE,
+    TAG_MESSAGE
   }
 }

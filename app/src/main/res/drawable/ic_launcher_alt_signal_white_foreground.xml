@@ -14,10 +14,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -32,10 +32,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -50,10 +50,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -68,10 +68,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -86,10 +86,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -104,10 +104,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -122,10 +122,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -140,10 +140,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -158,10 +158,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -176,10 +176,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -194,10 +194,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -212,10 +212,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -230,10 +230,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -248,10 +248,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -266,10 +266,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -284,10 +284,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>
@@ -302,10 +302,10 @@
                 android:endX="54"
                 android:endY="77">
                 <item
-                    android:color="#FF5C8DFF"
+                    android:color="#FFB35CFF"
                     android:offset="0"/>
                 <item
-                    android:color="#FF3B45FD"
+                    android:color="#FFA23BFD"
                     android:offset="1"/>
             </gradient>
         </aapt:attr>

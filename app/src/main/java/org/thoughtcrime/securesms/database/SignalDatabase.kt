@@ -65,6 +65,8 @@ open class SignalDatabase(private val context: Application, databaseSecret: Data
   val cdsTable: CdsTable = CdsTable(context, this)
   val remoteMegaphoneTable: RemoteMegaphoneTable = RemoteMegaphoneTable(context, this)
   val pendingPniSignatureMessageTable: PendingPniSignatureMessageTable = PendingPniSignatureMessageTable(context, this)
+  val messageTagTable: MessageTagTable = MessageTagTable(context, this)
+  val retractedMessageTable: RetractedMessageTable = RetractedMessageTable(context, this)
   val callTable: CallTable = CallTable(context, this)
   val kyberPreKeyTable: KyberPreKeyTable = KyberPreKeyTable(context, this)
   val callLinkTable: CallLinkTable = CallLinkTable(context, this)
@@ -93,6 +95,9 @@ open class SignalDatabase(private val context: Application, databaseSecret: Data
   @VisibleForTesting
   fun onCreateTablesIndexesAndTriggers(db: SignalSQLiteDatabase) {
     db.execSQL(MessageTable.CREATE_TABLE)
+    db.execSQL(MessageTagTable.CREATE_TABLE)
+    db.execSQL(MessageTagTable.CREATE_DEFINITION_TABLE)
+    db.execSQL(RetractedMessageTable.CREATE_TABLE)
     db.execSQL(AttachmentTable.CREATE_TABLE)
     db.execSQL(ThreadTable.CREATE_TABLE)
     db.execSQL(IdentityTable.CREATE_TABLE)
@@ -152,6 +157,7 @@ open class SignalDatabase(private val context: Application, databaseSecret: Data
     executeStatements(db, StorySendTable.CREATE_INDEXS)
     executeStatements(db, DistributionListTables.CREATE_INDEXES)
     executeStatements(db, PendingPniSignatureMessageTable.CREATE_INDEXES)
+    executeStatements(db, MessageTagTable.CREATE_INDEXES)
     executeStatements(db, CallTable.CREATE_INDEXES)
     executeStatements(db, ReactionTable.CREATE_INDEXES)
     executeStatements(db, KyberPreKeyTable.CREATE_INDEXES)
@@ -426,6 +432,16 @@ open class SignalDatabase(private val context: Application, databaseSecret: Data
     @get:JvmName("messages")
     val messages: MessageTable
       get() = instance!!.messageTable
+
+    @get:JvmStatic
+    @get:JvmName("messageTags")
+    val messageTags: MessageTagTable
+      get() = instance!!.messageTagTable
+
+    @get:JvmStatic
+    @get:JvmName("retractedMessages")
+    val retractedMessages: RetractedMessageTable
+      get() = instance!!.retractedMessageTable
 
     @get:JvmStatic
     @get:JvmName("messageLog")

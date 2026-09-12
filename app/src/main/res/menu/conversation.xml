@@ -7,6 +7,13 @@
         android:title="@string/conversation__menu_view_all_media" />
 
     <item
+        android:id="@+id/menu_view_tagged"
+        android:title="@string/conversation__menu_tagged_messages"
+        android:icon="@drawable/symbol_tag_24"
+        app:iconTint="@color/signal_icon_tint_primary"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/menu_conversation_settings"
         android:title="@string/conversation__menu_conversation_settings" />
 

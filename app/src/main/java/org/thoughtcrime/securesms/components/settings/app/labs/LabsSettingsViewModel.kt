@@ -45,6 +45,10 @@ class LabsSettingsViewModel : ViewModel() {
         SignalStore.labs.improvedMessageDeletion = event.enabled
         _state.value = _state.value.copy(improvedMessageDeletion = event.enabled)
       }
+      is LabsSettingsEvents.ToggleKeepRemotelyDeletedMessages -> {
+        SignalStore.labs.keepRemotelyDeletedMessages = event.enabled
+        _state.value = _state.value.copy(keepRemotelyDeletedMessages = event.enabled)
+      }
     }
   }
 
@@ -56,7 +60,8 @@ class LabsSettingsViewModel : ViewModel() {
       betterSearch = SignalStore.labs.betterSearch,
       starredMessages = SignalStore.labs.starredMessages,
       stickerReplies = SignalStore.labs.stickerReplies,
-      improvedMessageDeletion = SignalStore.labs.improvedMessageDeletion
+      improvedMessageDeletion = SignalStore.labs.improvedMessageDeletion,
+      keepRemotelyDeletedMessages = SignalStore.labs.keepRemotelyDeletedMessages
     )
   }
 }

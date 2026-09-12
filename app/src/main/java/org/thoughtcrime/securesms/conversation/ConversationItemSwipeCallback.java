@@ -33,13 +33,27 @@ public class ConversationItemSwipeCallback extends ItemTouchHelper.SimpleCallbac
   private final ConversationItemTouchListener itemTouchListener;
   private final OnSwipeListener               onSwipeListener;
 
+  private final OnSwipeListener onReverseSwipeListener;
+
   public ConversationItemSwipeCallback(@NonNull SwipeAvailabilityProvider swipeAvailabilityProvider,
                                        @NonNull OnSwipeListener onSwipeListener)
   {
-    super(0, ItemTouchHelper.END);
+    this(swipeAvailabilityProvider, onSwipeListener, null);
+  }
+
+  /**
+   * @param onReverseSwipeListener Fired when the item is dragged the opposite way to reply. Null disables
+   *                               that direction entirely, leaving the original reply-only behaviour.
+   */
+  public ConversationItemSwipeCallback(@NonNull SwipeAvailabilityProvider swipeAvailabilityProvider,
+                                       @NonNull OnSwipeListener onSwipeListener,
+                                       @Nullable OnSwipeListener onReverseSwipeListener)
+  {
+    super(0, onReverseSwipeListener != null ? ItemTouchHelper.END | ItemTouchHelper.START : ItemTouchHelper.END);
     this.itemTouchListener          = new ConversationItemTouchListener(this::updateLatestDownCoordinate);
     this.swipeAvailabilityProvider  = swipeAvailabilityProvider;
     this.onSwipeListener            = onSwipeListener;
+    this.onReverseSwipeListener     = onReverseSwipeListener;
     this.shouldTriggerSwipeFeedback = true;
     this.canTriggerSwipe            = true;
   }
@@ -90,12 +104,24 @@ public class ConversationItemSwipeCallback extends ItemTouchHelper.SimpleCallbac
     float   sign              = getSignFromDirection(viewHolder.itemView);
     boolean isCorrectSwipeDir = sameSign(dx, sign);
 
+    boolean isReverseSwipeDir = onReverseSwipeListener != null && dx != 0 && !isCorrectSwipeDir;
+
     if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && isCorrectSwipeDir) {
       ConversationSwipeAnimationHelper.update(requireInteractiveConversationElement(viewHolder), Math.abs(dx), sign);
       recyclerView.invalidate();
       handleSwipeFeedback(recyclerView.getContext(), requireInteractiveConversationElement(viewHolder), Math.abs(dx));
       if (canTriggerSwipe) {
-        setTouchListener(recyclerView, viewHolder, Math.abs(dx));
+        setTouchListener(recyclerView, viewHolder, Math.abs(dx), false);
+      }
+    } else if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE && isReverseSwipeDir) {
+      ConversationSwipeAnimationHelper.updateReverse(requireInteractiveConversationElement(viewHolder), Math.abs(dx), -sign);
+      recyclerView.invalidate();
+      if (Math.abs(dx) > SWIPE_SUCCESS_DX && shouldTriggerSwipeFeedback) {
+        vibrate(recyclerView.getContext());
+        shouldTriggerSwipeFeedback = false;
+      }
+      if (canTriggerSwipe) {
+        setTouchListener(recyclerView, viewHolder, Math.abs(dx), true);
       }
     } else if (actionState == ItemTouchHelper.ACTION_STATE_IDLE || dx == 0) {
       ConversationSwipeAnimationHelper.update(requireInteractiveConversationElement(viewHolder), 0, 1);
@@ -116,18 +142,25 @@ public class ConversationItemSwipeCallback extends ItemTouchHelper.SimpleCallbac
     }
   }
 
-  private void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder) {
+  private void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, boolean reverse) {
     if (cannotSwipeViewHolder(viewHolder)) return;
 
     InteractiveConversationElement element = requireInteractiveConversationElement(viewHolder);
 
-    onSwipeListener.onSwipe(element.getConversationMessage());
+    if (reverse) {
+      if (onReverseSwipeListener != null) {
+        onReverseSwipeListener.onSwipe(element.getConversationMessage());
+      }
+    } else {
+      onSwipeListener.onSwipe(element.getConversationMessage());
+    }
   }
 
   @SuppressLint("ClickableViewAccessibility")
   private void setTouchListener(@NonNull RecyclerView recyclerView,
                                 @NonNull RecyclerView.ViewHolder viewHolder,
-                                float dx)
+                                float dx,
+                                boolean reverse)
   {
     recyclerView.setOnTouchListener((v, event) -> {
       switch (event.getAction()) {
@@ -135,7 +168,7 @@ public class ConversationItemSwipeCallback extends ItemTouchHelper.SimpleCallbac
           shouldTriggerSwipeFeedback = true;
           break;
         case MotionEvent.ACTION_UP:
-          handleTouchActionUp(recyclerView, viewHolder, dx);
+          handleTouchActionUp(recyclerView, viewHolder, dx, reverse);
         case MotionEvent.ACTION_CANCEL:
           swipeBack = true;
           shouldTriggerSwipeFeedback = false;
@@ -148,11 +181,12 @@ public class ConversationItemSwipeCallback extends ItemTouchHelper.SimpleCallbac
 
   private void handleTouchActionUp(@NonNull RecyclerView recyclerView,
                                    @NonNull RecyclerView.ViewHolder viewHolder,
-                                   float dx)
+                                   float dx,
+                                   boolean reverse)
   {
     if (dx > SWIPE_SUCCESS_DX) {
       canTriggerSwipe = false;
-      onSwiped(viewHolder);
+      onSwiped(viewHolder, reverse);
       if (shouldTriggerSwipeFeedback) {
         vibrate(viewHolder.itemView.getContext());
       }

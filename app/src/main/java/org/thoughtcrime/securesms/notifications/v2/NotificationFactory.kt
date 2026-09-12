@@ -370,6 +370,7 @@ object NotificationFactory {
 
     builder.apply {
       setSmallIcon(R.drawable.ic_notification)
+      setColor(ContextCompat.getColor(context, R.color.notification_background_ultramarine))
       setLargeIcon(BitmapFactory.decodeResource(context.resources, R.drawable.symbol_error_triangle_fill_32))
       setContentTitle(context.getString(R.string.MessageNotifier_message_delivery_failed))
       setContentText(context.getString(R.string.MessageNotifier_failed_to_deliver_message))
@@ -410,6 +411,7 @@ object NotificationFactory {
 
     builder.apply {
       setSmallIcon(R.drawable.ic_notification)
+      setColor(ContextCompat.getColor(context, R.color.notification_background_ultramarine))
       setLargeIcon(largeIcon)
       setContentTitle(contentTitle)
       setContentText(String.format("%s %s", EmojiStrings.FAILED_STORY, context.getString(R.string.MessageNotifier_story_delivery_failed)))
@@ -440,6 +442,7 @@ object NotificationFactory {
 
     builder.apply {
       setSmallIcon(R.drawable.ic_notification)
+      setColor(ContextCompat.getColor(context, R.color.notification_background_ultramarine))
       setLargeIcon(BitmapFactory.decodeResource(context.resources, CoreUiR.drawable.symbol_info_24))
       setContentTitle(context.getString(R.string.MessageNotifier_message_delivery_paused))
       setContentText(context.getString(R.string.MessageNotifier_verify_to_continue_messaging_on_signal))

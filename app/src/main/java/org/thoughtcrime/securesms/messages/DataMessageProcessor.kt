@@ -581,6 +581,17 @@ object DataMessageProcessor {
     return targetMessageId
   }
 
+  /**
+   * True when the user has asked to keep messages that other people delete for everyone.
+   *
+   * Deliberately never applies to our own deletes arriving from a linked device: if we delete something on
+   * Desktop we still want it gone here. Group admin deletes are also left alone, since those are moderation
+   * rather than someone retracting their own message.
+   */
+  private fun shouldKeepRemotelyDeleted(senderRecipientId: RecipientId): Boolean {
+    return SignalStore.labs.keepRemotelyDeletedMessages && senderRecipientId != Recipient.self().id
+  }
+
   fun handleRemoteDelete(context: Context, envelope: Envelope, message: DataMessage, senderRecipientId: RecipientId, earlyMessageCacheEntry: EarlyMessageCacheEntry?, batchCache: BatchCache): MessageId? {
     val delete = message.delete!!
 
@@ -590,6 +601,14 @@ object DataMessageProcessor {
     val targetMessage: MessageRecord? = SignalDatabase.messages.getMessageFor(targetSentTimestamp, senderRecipientId)
 
     return if (targetMessage != null && MessageConstraintsUtil.isValidRemoteDeleteReceive(targetMessage, senderRecipientId, envelope.serverTimestamp!!)) {
+      if (shouldKeepRemotelyDeleted(senderRecipientId)) {
+        // The user has opted to keep messages other people unsend. Record that the retraction arrived so the
+        // UI can surface it, and leave the message itself untouched.
+        log(envelope.clientTimestamp!!, "Keeping remotely deleted message ${targetMessage.id} per user setting.")
+        SignalDatabase.retractedMessages.markRetracted(targetMessage.id, envelope.serverTimestamp!!)
+        return MessageId(targetMessage.id)
+      }
+
       SignalDatabase.messages.markAsRemoteDelete(targetMessage, senderRecipientId)
       if (targetMessage.isStory()) {
         SignalDatabase.messages.deleteRemotelyDeletedStory(targetMessage.id)

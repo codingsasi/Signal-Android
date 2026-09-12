@@ -44,6 +44,15 @@ final class ConversationSwipeAnimationHelper {
     updateContactPhotoHolderTransition(interactiveConversationElement.getBadgeImageView(), progress, sign);
   }
 
+  /**
+   * Drags the bubble for a swipe in the opposite direction to reply. Deliberately skips the reply icon and
+   * quoted indicator, since those affordances only make sense for the reply gesture.
+   */
+  public static void updateReverse(@NonNull InteractiveConversationElement interactiveConversationElement, float dx, float sign) {
+    updateBodyBubbleTransition(interactiveConversationElement.getBubbleViews(), dx, sign);
+    updateReactionsTransition(interactiveConversationElement.getReactionsView(), dx, sign);
+  }
+
   public static void trigger(@NonNull InteractiveConversationElement interactiveConversationElement) {
     triggerReplyIcon(interactiveConversationElement.getReplyView());
   }

@@ -15,5 +15,6 @@ data class LabsSettingsState(
   val betterSearch: Boolean = false,
   val starredMessages: Boolean = false,
   val stickerReplies: Boolean = false,
-  val improvedMessageDeletion: Boolean = false
+  val improvedMessageDeletion: Boolean = false,
+  val keepRemotelyDeletedMessages: Boolean = false
 )

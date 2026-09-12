@@ -42,8 +42,8 @@
 
     <color name="conversation_compose_divider">#32000000</color>
 
-    <color name="touch_highlight">#400099cc</color>
-    <color name="touch_highlight_material3">#14E2E1E5</color>
+    <color name="touch_highlight">#40000ACC</color>
+    <color name="touch_highlight_material3">#14E5E1E5</color>
 
     <color name="ConversationListTabs__unread">#FFCE4A40</color>
 
@@ -53,7 +53,7 @@
     <color name="media_preview_bar_background">#90010101</color>
 
     <color name="storage_color_empty">@color/core_grey_50</color>
-    <color name="storage_color_photos">#ff5951C8</color>
+    <color name="storage_color_photos">#FFAC51C8</color>
     <color name="storage_color_videos">#ff9BCFBD</color>
     <color name="storage_color_audio">@color/core_ultramarine</color>
     <color name="storage_color_files">#ffA23474</color>
@@ -61,9 +61,9 @@
     <color name="conversation_list_archive_background_end">@color/signal_colorPrimary</color>
 
     <color name="safety_number_card_grey">#ffEBEAE8</color>
-    <color name="safety_number_card_blue">#ff506ECD</color>
+    <color name="safety_number_card_blue">#FF8A50CD</color>
 
-    <color name="notification_background_ultramarine">#3B45FD</color>
+    <color name="notification_background_ultramarine">#B93BFD</color>
 
     <!-- Bottom-sheet dialog navigation bar color. Opaque below API 27 (keeps the legacy colored
          strip); overridden to transparent in values-v27 so Material's BottomSheetDialog lays the

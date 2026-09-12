@@ -5,10 +5,10 @@
     android:viewportHeight="108">
     <group>
         <path
-            android:fillColor="#FF020727"
+            android:fillColor="#FF160227"
             android:pathData="M0 0H108V108H0z"/>
         <path
-            android:fillColor="#FF15040E"
+            android:fillColor="#FF0D0415"
             android:pathData="M108 0H0v108h108V0Z"/>
     </group>
 </vector>

@@ -139,7 +139,7 @@
 
     <color name="reactions_pill_text_color">@color/signal_colorOnSurfaceVariant</color>
     <color name="reactions_pill_selected_text_color">@color/core_grey_75</color>
-    <color name="reactions_screen_dark_shade_color">#6670747D</color>
+    <color name="reactions_screen_dark_shade_color">#6675707D</color>
     <color name="reactions_screen_light_shade_color">@color/transparent_white_20</color>
     <color name="reactions_overlay_any_emoji_background">@color/signal_colorSurfaceVariant_16_no_alpha</color>
     <color name="reactions_overlay_any_emoji_foreground">@color/signal_colorOnSurfaceVariant</color>
@@ -191,7 +191,7 @@
 
     <color name="voice_note_player_view_background">@color/signal_colorSurface1</color>
 
-    <color name="num_pad_key_background">#dce5f9</color>
+    <color name="num_pad_key_background">#E7DCF9</color>
 
     <color name="top_toast_background_color">@color/core_white</color>
 
@@ -208,17 +208,17 @@
     <color name="message_request_bar_acceptForeground_wallpaper">@color/signal_colorNeutralInverse</color>
 
     <color name="safety_tip_background">@color/core_white</color>
-    <color name="safety_tip_image_background">#99F2F5F9</color>
+    <color name="safety_tip_image_background">#99F4F2F9</color>
 
     <color name="signal_colorOnWarning">#FFB44828</color>
 
-    <color name="release_notes_bubble">#FF9294BC</color>
+    <color name="release_notes_bubble">#FFAD92BC</color>
     <color name="release_notes_bubble_text">#FFFFFFFF</color>
-    <color name="release_notes_cta_background">#FFD0D1E9</color>
-    <color name="release_notes_background_pattern">#FFE3E4E9</color>
-    <color name="release_notes_header_border">#FFE3E4E9</color>
-    <color name="release_notes_background">#FFF3F3F7</color>
-    <color name="release_notes_header_background">#FFF6F7FF</color>
-    <color name="release_notes_toolbar_scrolled">#FFEAEDF8</color>
-    <color name="release_notes_toolbar_transparent">#00EAEDF8</color>
+    <color name="release_notes_cta_background">#FFE1D0E9</color>
+    <color name="release_notes_background_pattern">#FFE6E3E9</color>
+    <color name="release_notes_header_border">#FFE6E3E9</color>
+    <color name="release_notes_background">#FFF6F3F7</color>
+    <color name="release_notes_header_background">#FFFBF6FF</color>
+    <color name="release_notes_toolbar_scrolled">#FFF1EAF8</color>
+    <color name="release_notes_toolbar_transparent">#00F1EAF8</color>
 </resources>

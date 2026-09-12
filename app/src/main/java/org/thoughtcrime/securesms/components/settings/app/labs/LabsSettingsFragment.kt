@@ -145,6 +145,15 @@ private fun LabsSettingsContent(
 
       item {
         Rows.ToggleRow(
+          checked = state.keepRemotelyDeletedMessages,
+          text = "Keep messages others delete",
+          label = "When someone deletes a message for everyone, keep it on this device instead of removing it. The message stays visible and Message info shows that they tried to unsend it. Your own deletes from linked devices, and group admin deletes, still apply normally.",
+          onCheckChanged = { onEvent(LabsSettingsEvents.ToggleKeepRemotelyDeletedMessages(it)) }
+        )
+      }
+
+      item {
+        Rows.ToggleRow(
           checked = state.improvedMessageDeletion,
           text = "Improved message deletion",
           label = "Show a temporary tombstone when you delete a message, allowing you to promote it to a remote deletion.",
