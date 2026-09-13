@@ -16,8 +16,11 @@ sealed interface AccountSettingsEvent {
   /** The user tapped the navigation (back) icon. */
   data object NavigateBackClicked : AccountSettingsEvent
 
-  /** The user tapped the Signal Login card, which shows the account and recovery keys. */
+  /** The user tapped the Signal Login card, which asks for the screen lock before showing the account and recovery keys. */
   data object AccountAndRecoveryClicked : AccountSettingsEvent
+
+  /** The user got past their screen lock, so we can show them the account and recovery keys. */
+  data object SignalLoginDetailsAuthenticated : AccountSettingsEvent
 
   /** The user tapped the row that either creates or changes their PIN. */
   data object ModifyPinClicked : AccountSettingsEvent
@@ -45,11 +48,26 @@ sealed interface AccountSettingsEvent {
   /** The user confirmed turning registration lock on or off. */
   data object RegistrationLockConfirmed : AccountSettingsEvent
 
-  /** The user tapped the authenticator app row in the two-factor authentication section. */
-  data object TotpAppClicked : AccountSettingsEvent
+  /** The user tapped the authenticator app option in the two-factor set-up menu. */
+  data object AddTotpAppClicked : AccountSettingsEvent
 
-  /** The user tapped the passkeys row in the two-factor authentication section. */
-  data object PasskeysClicked : AccountSettingsEvent
+  /** The user tapped the learn more link on the dialog explaining the authenticator app limit. */
+  data object LearnMoreClicked : AccountSettingsEvent
+
+  /** The user tapped the rename option in [method]'s overflow menu. */
+  data class RenameMethodClicked(val method: TwoFactorMethod) : AccountSettingsEvent
+
+  /** The user tapped the remove option in [method]'s overflow menu, which asks for the screen lock first. */
+  data class RemoveMethodClicked(val method: TwoFactorMethod) : AccountSettingsEvent
+
+  /** The user got past their screen lock, so we can go on asking them to confirm removing [method]. */
+  data class MethodRemovalAuthenticated(val method: TwoFactorMethod) : AccountSettingsEvent
+
+  /** The screen lock turned the user away, so whatever asked for it goes no further. */
+  data object AuthenticationFailed : AccountSettingsEvent
+
+  /** The user confirmed removing the authenticator app named by the open dialog, which removes it. */
+  data object RemoveTotpAppConfirmed : AccountSettingsEvent
 
   /** The user tapped the advanced PIN settings row. */
   data object AdvancedPinSettingsClicked : AccountSettingsEvent

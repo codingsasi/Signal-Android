@@ -19,6 +19,7 @@ import android.content.IntentFilter
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.PointF
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
@@ -42,6 +43,7 @@ import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.view.animation.AnimationUtils
 import android.view.inputmethod.EditorInfo
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
@@ -271,6 +273,7 @@ import org.thoughtcrime.securesms.database.model.Quote
 import org.thoughtcrime.securesms.database.model.databaseprotos.BodyRangeList
 import org.thoughtcrime.securesms.databinding.V2ConversationBackgroundBinding
 import org.thoughtcrime.securesms.databinding.V2ConversationFragmentBinding
+import org.thoughtcrime.securesms.databinding.V2ConversationOverlayBinding
 import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.events.GroupCallPeekEvent
 import org.thoughtcrime.securesms.giph.mp4.GiphyMp4ItemDecoration
@@ -375,6 +378,7 @@ import org.thoughtcrime.securesms.util.MessageConstraintsUtil.getEditMessageThre
 import org.thoughtcrime.securesms.util.MessageConstraintsUtil.isValidEditMessageSend
 import org.thoughtcrime.securesms.util.MessageUtil
 import org.thoughtcrime.securesms.util.PlayStoreUtil
+import org.thoughtcrime.securesms.util.Projection
 import org.thoughtcrime.securesms.util.RemoteConfig
 import org.thoughtcrime.securesms.util.SignalLocalMetrics
 import org.thoughtcrime.securesms.util.TextSecurePreferences
@@ -477,6 +481,7 @@ class ConversationFragment :
 
   private val disposables = LifecycleDisposable()
   private val backgroundBinding by ViewBinderDelegate(bindingFactory = { V2ConversationBackgroundBinding.bind(conversationBackground) })
+  private val overlayBinding by ViewBinderDelegate(bindingFactory = { V2ConversationOverlayBinding.bind(conversationOverlay) })
   private val binding by ViewBinderDelegate(bindingFactory = { V2ConversationFragmentBinding.bind(conversationContent) }, onBindingWillBeDestroyed = { _binding ->
     _binding.conversationInputPanel.embeddedTextEditor.apply {
       setOnEditorActionListener(null)
@@ -634,6 +639,9 @@ class ConversationFragment :
   /** The wallpaper, drawn behind [conversationContent]. */
   private lateinit var conversationBackground: View
 
+  /** The long press overlay, drawn above [conversationContent]. */
+  private lateinit var conversationOverlay: View
+
   private val chatScreenViewModel: ChatScreenViewModel by viewModels()
 
   /** Stable across recomposition, so view code can ask for a keyboard from a click listener. */
@@ -677,7 +685,7 @@ class ConversationFragment :
   private val scheduledMessagesStub: Stub<View> by lazy { Stub(binding.scheduledMessagesStub) }
 
   private val reactionDelegate: ConversationReactionDelegate by lazy(LazyThreadSafetyMode.NONE) {
-    val conversationReactionStub = Stub<ConversationReactionOverlay>(binding.conversationReactionScrubberStub)
+    val conversationReactionStub = Stub<ConversationReactionOverlay>(overlayBinding.conversationReactionScrubberStub)
     val delegate = ConversationReactionDelegate(conversationReactionStub)
     delegate.setOnReactionSelectedListener(OnReactionsSelectedListener())
 
@@ -705,6 +713,7 @@ class ConversationFragment :
   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
     conversationBackground = inflater.inflate(R.layout.v2_conversation_background, container, false)
     conversationContent = inflater.inflate(R.layout.v2_conversation_fragment, container, false)
+    conversationOverlay = inflater.inflate(R.layout.v2_conversation_overlay, container, false)
 
     return ComposeView(requireContext()).apply {
       setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -716,11 +725,27 @@ class ConversationFragment :
             scrims = chatScrims,
             isBubble = args.conversationScreenType == ConversationScreenType.BUBBLE,
             backgroundView = conversationBackground,
-            contentView = conversationContent
+            contentView = conversationContent,
+            overlayView = conversationOverlay
           )
         }
       }
     }
+  }
+
+  /**
+   * Where [target]'s row sits in the overlay's coordinate space. [Projection] walks the layout
+   * positions; translations are not part of that walk, so they are added here.
+   */
+  private fun overlayOriginOf(target: InteractiveConversationElement, recycler: RecyclerView): PointF {
+    val projection = Projection.relativeToViewWithCommonRoot(target.root, conversationOverlay, null)
+    val origin = PointF(
+      projection.x + target.root.translationX,
+      projection.y + target.root.translationY + recycler.translationY
+    )
+    projection.release()
+
+    return origin
   }
 
   private fun onMediaKeyboardEvent(event: MediaKeyboardEvents) {
@@ -3479,6 +3504,17 @@ class ConversationFragment :
     return isScrolledToBottom() || layoutManager.findFirstVisibleItemPosition() <= 0
   }
 
+  /**
+   * The open search view's text field, or null when search is closed. Focusing the [SearchView] itself
+   * does not bring the keyboard up, since the keyboard follows the focused field rather than its host.
+   */
+  private fun expandedSearchField(): EditText? {
+    return searchMenuItem
+      ?.takeIf { it.isActionViewExpanded }
+      ?.actionView
+      ?.findViewById(androidx.appcompat.R.id.search_src_text)
+  }
+
   private fun closeChatSearch() {
     isSearchRequested = false
     searchViewModel.onSearchClosed()
@@ -4200,11 +4236,6 @@ class ConversationFragment :
         (!recipient.isGroup || recipient.isActiveGroup) &&
         adapter.selectedItems.isEmpty()
       ) {
-        multiselectItemDecoration.setFocusedItem(MultiselectPart.Message(item.conversationMessage))
-        binding.conversationItemRecycler.invalidateItemDecorations()
-        binding.reactionsShade.visibility = View.VISIBLE
-        binding.conversationItemRecycler.suppressLayout(true)
-
         val target: InteractiveConversationElement? = if (itemView is InteractiveConversationElement) {
           itemView
         } else {
@@ -4217,103 +4248,11 @@ class ConversationFragment :
         }
 
         if (target != null) {
-          val audioUri = messageRecord.getAudioUriForLongClick()
-          if (audioUri != null) {
-            getVoiceNoteMediaController().pausePlayback(audioUri)
-          }
-
-          val childAdapterPosition = target.getAdapterPosition(binding.conversationItemRecycler)
-          var mp4Holder: GiphyMp4ProjectionPlayerHolder? = null
-          var videoBitmap: Bitmap? = null
-          if (childAdapterPosition != RecyclerView.NO_POSITION) {
-            mp4Holder = giphyMp4ProjectionRecycler.getCurrentHolder(childAdapterPosition)
-            if (mp4Holder?.isVisible == true) {
-              mp4Holder.pause()
-              videoBitmap = mp4Holder.bitmap
-              mp4Holder.hide()
-            }
-          }
-
-          val snapshot = ConversationItemSelection.snapshotView(target, binding.conversationItemRecycler, messageRecord, videoBitmap)
-
+          // Read before anything is asked to hide, or the keyboard cannot be brought back on dismiss.
           val focusedView = if (container.isInputShowing || !container.isKeyboardShowing) null else itemView.rootView.findFocus()
-          val bodyBubble = target.bubbleView
-          val selectedConversationModel = SelectedConversationModel(
-            bitmap = snapshot,
-            itemX = itemView.x,
-            itemY = itemView.y + binding.conversationItemRecycler.translationY,
-            bubbleY = bodyBubble.y,
-            bubbleWidth = bodyBubble.width,
-            audioUri = audioUri,
-            isOutgoing = messageRecord.isOutgoing,
-            focusedView = focusedView,
-            snapshotMetrics = target.getSnapshotStrategy()?.snapshotMetrics ?: InteractiveConversationElement.SnapshotMetrics(
-              snapshotOffset = bodyBubble.x,
-              contextMenuPadding = bodyBubble.x
-            )
-          )
 
-          bodyBubble.visibility = View.INVISIBLE
-          target.reactionsView.visibility = View.INVISIBLE
-
-          val quotedIndicatorVisible = target.quotedIndicatorView?.visibility == View.VISIBLE
-          if (quotedIndicatorVisible) {
-            ViewUtil.fadeOut(target.quotedIndicatorView!!, 150, View.INVISIBLE)
-          }
-
-          container.hideKeyboard(composeText)
-
-          viewModel.setHideScrollButtonsForReactionOverlay(true)
-
-          val targetViews: InteractiveConversationElement = target
-          handleReaction(
-            item.conversationMessage,
-            ReactionsToolbarListener(item.conversationMessage),
-            selectedConversationModel,
-            object : OnHideListener {
-              override fun startHide(focusedView: View?) {
-                if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) || activity == null || activity?.isFinishing == true) {
-                  return
-                }
-
-                multiselectItemDecoration.hideShade(binding.conversationItemRecycler)
-                ViewUtil.fadeOut(binding.reactionsShade, resources.getInteger(R.integer.reaction_scrubber_hide_duration), View.GONE)
-
-                if (focusedView == composeText || searchMenuItem?.isActionViewExpanded == true) {
-                  container.showSoftkey(composeText)
-                }
-              }
-
-              override fun onHide() {
-                viewModel.setIsReactionDelegateShowing(false)
-
-                if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) || activity == null || activity?.isFinishing == true) {
-                  return
-                }
-
-                binding.conversationItemRecycler.suppressLayout(false)
-                if (selectedConversationModel.audioUri != null) {
-                  getVoiceNoteMediaController().resumePlayback(selectedConversationModel.audioUri, messageRecord.id)
-                }
-
-                clearFocusedItem()
-
-                if (mp4Holder != null) {
-                  mp4Holder.show()
-                  mp4Holder.resume()
-                }
-
-                bodyBubble.visibility = View.VISIBLE
-                targetViews.reactionsView.visibility = View.VISIBLE
-
-                if (quotedIndicatorVisible && targetViews.quotedIndicatorView != null) {
-                  ViewUtil.fadeIn(targetViews.quotedIndicatorView!!, 150)
-                }
-
-                viewModel.setHideScrollButtonsForReactionOverlay(false)
-              }
-            }
-          )
+          container.hideAll(composeText)
+          showReactionOverlay(item, target, focusedView)
         }
       } else if (item.conversationMessage.isActiveCollapsedHead) {
         viewModel.onExpandEvents(item.conversationMessage.messageRecord.id)
@@ -4322,6 +4261,137 @@ class ConversationFragment :
         adapter.toggleSelection(item)
         startActionMode()
       }
+    }
+
+    /** Snapshots [target] and hands it to the reaction overlay. */
+    private fun showReactionOverlay(
+      item: MultiselectPart,
+      target: InteractiveConversationElement,
+      focusedView: View?
+    ) {
+      if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) || activity == null || activity?.isFinishing == true) {
+        return
+      }
+
+      val messageRecord = item.getMessageRecord()
+
+      // Held, not re-read: teardown has to work from a screen that is already going.
+      val recycler = binding.conversationItemRecycler
+      val shade = overlayBinding.reactionsShade
+
+      multiselectItemDecoration.setFocusedItem(MultiselectPart.Message(item.conversationMessage))
+      recycler.invalidateItemDecorations()
+      shade.visibility = View.VISIBLE
+      recycler.suppressLayout(true)
+
+      val audioUri = messageRecord.getAudioUriForLongClick()
+      if (audioUri != null) {
+        getVoiceNoteMediaController().pausePlayback(audioUri)
+      }
+
+      val childAdapterPosition = target.getAdapterPosition(recycler)
+      var mp4Holder: GiphyMp4ProjectionPlayerHolder? = null
+      var videoBitmap: Bitmap? = null
+      if (childAdapterPosition != RecyclerView.NO_POSITION) {
+        mp4Holder = giphyMp4ProjectionRecycler.getCurrentHolder(childAdapterPosition)
+        if (mp4Holder?.isVisible == true) {
+          mp4Holder.pause()
+          videoBitmap = mp4Holder.bitmap
+          mp4Holder.hide()
+        }
+      }
+
+      val snapshot = ConversationItemSelection.snapshotView(target, recycler, messageRecord, videoBitmap)
+
+      val bodyBubble = target.bubbleView
+      val snapshotMetrics = target.getSnapshotStrategy()?.snapshotMetrics ?: InteractiveConversationElement.SnapshotMetrics(
+        snapshotOffset = bodyBubble.x,
+        contextMenuPadding = bodyBubble.x
+      )
+
+      val origin = overlayOriginOf(target, recycler)
+      val selectedConversationModel = SelectedConversationModel(
+        bitmap = snapshot,
+        bubbleX = origin.x + snapshotMetrics.snapshotOffset,
+        bubbleY = origin.y + bodyBubble.y,
+        bubbleWidth = bodyBubble.width,
+        contextMenuX = origin.x + snapshotMetrics.contextMenuPadding,
+        audioUri = audioUri,
+        isOutgoing = messageRecord.isOutgoing,
+        focusedView = focusedView,
+        returnPosition = SelectedConversationModel.ReturnPosition {
+          if (view == null || target.root.parent == null || target.conversationMessage.messageRecord.id != messageRecord.id) {
+            null
+          } else {
+            val current = overlayOriginOf(target, recycler)
+            PointF(current.x + snapshotMetrics.snapshotOffset, current.y + bodyBubble.y)
+          }
+        }
+      )
+
+      bodyBubble.visibility = View.INVISIBLE
+      target.reactionsView.visibility = View.INVISIBLE
+
+      val quotedIndicatorVisible = target.quotedIndicatorView?.visibility == View.VISIBLE
+      if (quotedIndicatorVisible) {
+        ViewUtil.fadeOut(target.quotedIndicatorView!!, 150, View.INVISIBLE)
+      }
+
+      viewModel.setHideScrollButtonsForReactionOverlay(true)
+
+      handleReaction(
+        item.conversationMessage,
+        ReactionsToolbarListener(item.conversationMessage),
+        selectedConversationModel,
+        object : OnHideListener {
+          override fun startHide(focusedView: View?) {
+            // Ahead of the started check: a dismiss while stopped would leave the chat dimmed.
+            multiselectItemDecoration.hideShade(recycler)
+            ViewUtil.fadeOut(shade, resources.getInteger(R.integer.reaction_scrubber_hide_duration), View.GONE)
+
+            if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) || activity == null || activity?.isFinishing == true) {
+              return
+            }
+
+            val searchField = expandedSearchField()
+            if (searchField != null && focusedView == searchField) {
+              // The input panel is gone while search is open, so composeText cannot take the keyboard back.
+              container.showSoftkey(searchField)
+            } else if (focusedView == composeText) {
+              container.showSoftkey(composeText)
+            }
+          }
+
+          override fun onHide() {
+            viewModel.setIsReactionDelegateShowing(false)
+
+            // Likewise: otherwise the list stays frozen and the message invisible.
+            recycler.suppressLayout(false)
+            multiselectItemDecoration.setFocusedItem(null)
+            recycler.invalidateItemDecorations()
+            bodyBubble.visibility = View.VISIBLE
+            target.reactionsView.visibility = View.VISIBLE
+            viewModel.setHideScrollButtonsForReactionOverlay(false)
+
+            if (quotedIndicatorVisible && target.quotedIndicatorView != null) {
+              ViewUtil.fadeIn(target.quotedIndicatorView!!, 150)
+            }
+
+            if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) || activity == null || activity?.isFinishing == true) {
+              return
+            }
+
+            if (selectedConversationModel.audioUri != null) {
+              getVoiceNoteMediaController().resumePlayback(selectedConversationModel.audioUri, messageRecord.id)
+            }
+
+            if (mp4Holder != null) {
+              mp4Holder.show()
+              mp4Holder.resume()
+            }
+          }
+        }
+      )
     }
 
     override fun onShowGroupDescriptionClicked(groupName: String, description: String, shouldLinkifyWebLinks: Boolean) {

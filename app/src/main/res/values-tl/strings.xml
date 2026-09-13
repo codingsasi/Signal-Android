@@ -3268,7 +3268,7 @@
     <!-- Subtitle in a dialog that describes the timezone the user is picking times in. The first placeholder is a UTC offset, and the second placeholder is a user-friendly name for the timezone, e.g. "All times in (GMT-05:00) Eastern Standard Time" -->
     <string name="MuteUntilTimePickerBottomSheet__timezone_disclaimer">Lahat ng oras ay (%1$s) %2$s</string>
     <!-- Toast shown when choosing an invalid date to mute until (eg a date in the past) -->
-    <string name="MuteUntilTimePickerBottomSheet__invalid">Invalid time</string>
+    <string name="MuteUntilTimePickerBottomSheet__invalid">Invalid ang oras</string>
 
     <!-- KeyCachingService -->
     <string name="KeyCachingService_signal_passphrase_cached">Pindutin upang buksan</string>
@@ -3302,6 +3302,8 @@
     <!-- MessageNotifier -->
     <!-- Text shown in a system notification that is used to summarize your notification. The first placeholder is a pluralized string that describes how many messages (e.g. "3 messages"), and the second placeholder is a pluralized string that describes the number of unique chats those message appear in (e.g. "2 chats"). -->
     <string name="MessageNotifier_s_in_s">%1$s in %2$s</string>
+    <!-- Subtext shown in a group chat notification when the most recent message is a direct reply to a message you sent. -->
+    <string name="MessageNotifier_replied_to_you">Replied to you: %1$s</string>
     <!-- Text shown in a system notification that is used to summary how many messages you received. -->
     <plurals name="MessageNotifier_d_messages">
         <item quantity="one">%1$d message</item>
@@ -4164,8 +4166,8 @@
     <!-- preferences.xml -->
     <string name="preferences_beta">Beta</string>
     <string name="preferences__sms_mms">SMS at MMS</string>
-    <string name="preferences__pref_use_address_book_photos">Use address book photos</string>
-    <string name="preferences__display_contact_photos_from_your_address_book_if_available">I-display ang contact photos mula sa address book mo kung available</string>
+    <string name="preferences__pref_use_address_book_photos">Prefer address book photos</string>
+    <string name="preferences__display_contact_photos_from_your_address_book_if_available">Prefer contact photos from your address book if available</string>
     <!-- Preference menu item title for a toggle switch for preserving the archived state of muted chats. -->
     <string name="preferences__pref_keep_muted_chats_archived">Panatilihing Naka-archive ang Muted Chats</string>
     <!-- Preference menu item description for a toggle switch for preserving the archived state of muted chats. -->
@@ -6191,7 +6193,7 @@
     <string name="ConversationSettingsFragment__conversation_muted_until_s">Naka-mute ang chat hanggang %1$s</string>
     <string name="ConversationSettingsFragment__conversation_muted_forever">Naka-mute ang chat forever</string>
     <!-- Subtitle when conversation is muted forever -->
-    <string name="ConversationSettingsFragment__conversation_muted_always">Always</string>
+    <string name="ConversationSettingsFragment__conversation_muted_always">Palagi</string>
     <string name="ConversationSettingsFragment__copied_phone_number_to_clipboard">Copied phone number to clipboard.</string>
     <string name="ConversationSettingsFragment__phone_number">Phone number</string>
     <string name="ConversationSettingsFragment__get_badges">Makakuha ng badges para sa profile mo sa pamamagitan ng pagsuporta sa Signal. I-tap ang isang badge para matuto pa tungkol dito.</string>
@@ -7515,16 +7517,16 @@
     <!-- Fourth step number/bullet for choose new default sms app instructions -->
     <string name="ChooseANewDefaultSmsAppFragment__bullet_4">4</string>
     <!-- BackupSchedulePermission Megaphone -->
-    <!-- The title on an alert window that explains to the user that we are unable to backup their messages -->
-    <string name="BackupSchedulePermissionMegaphone__cant_back_up_chats">Hindi ma-back up ang chats</string>
-    <!-- The body text of an alert window that tells the user that we are unable to backup their messages -->
-    <string name="BackupSchedulePermissionMegaphone__your_chats_are_no_longer_being_automatically_backed_up">Hindi na automatic na bina-back up ang chat mo.</string>
-    <!-- The text on a button in an alert window that, when clicked, will take the user to a screen to re-enable backups -->
-    <string name="BackupSchedulePermissionMegaphone__back_up_chats">I-back up ang chats</string>
+    <!-- The title on an alert window that asks the user to grant the alarms permission so that automatic backups run more reliably -->
+    <string name="BackupSchedulePermissionMegaphone__improve_backup_reliability">Improve backup reliability</string>
+    <!-- The body text of an alert window that asks the user to grant the alarms permission so that automatic backups run more reliably -->
+    <string name="BackupSchedulePermissionMegaphone__allow_the_alarms_permission_to_improve_automatic_daily_backups">Allow the \"alarms\" permission to improve automatic daily backups.</string>
+    <!-- The text on a button in an alert window that, when clicked, will take the user to a screen to grant the alarms permission -->
+    <string name="BackupSchedulePermissionMegaphone__allow">Allow</string>
     <!-- The text on a button in an alert window that, when clicked, will take the user to a screen to re-enable backups -->
     <string name="BackupSchedulePermissionMegaphone__not_now">Hindi ngayon</string>
-    <!-- Re-enable backup permission bottom sheet title -->
-    <string name="BackupSchedulePermissionMegaphone__to_reenable_backups">Para I-enable ulit ang backups:</string>
+    <!-- Alarms permission bottom sheet title, followed by a numbered list of instructions -->
+    <string name="BackupSchedulePermissionMegaphone__to_allow_permission">To allow permission:</string>
     <!-- Re-enable backups permission bottom sheet instruction 1 text -->
     <string name="BackupSchedulePermissionMegaphone__tap_the_go_to_settings_button_below">I-tap ang \"Go to settings\" button sa baba</string>
     <!-- Re-enable backups permission bottom sheet instruction 2 text -->
@@ -8202,15 +8204,6 @@
     <string name="BackupSetupCompleteBottomSheet__optimize_subtitle">I-o-offload ang lumang media, pero pwede mo pa rin itong ma-download anumang oras mula sa backup mo.</string>
     <!-- Primary button on the setup complete bottom sheet -->
     <string name="BackupSetupCompleteBottomSheet__back_up_now">Mag-back up na ngayon</string>
-
-    <!-- Title of a megaphone shown to prompt the user to upgrade to the new local backups type -->
-    <string name="UseNewOnDeviceBackups__title">Gamitin ang bagong on-device backups</string>
-    <!-- Body of a megaphone shown to prompt the user to upgrade to the new local backups type -->
-    <string name="UseNewOnDeviceBackups__body">Kaya na ng on-device backups na mag-save nang mas mabilis gamit ang mas kaunting data.</string>
-    <!-- Button of a megaphone that will take the user to the upgrade flow -->
-    <string name="UseNewOnDeviceBackups__upgrade">Upgrade</string>
-    <!-- Button of a megaphone that will snooze the reminder to upgrade to the new local backups type -->
-    <string name="UseNewOnDeviceBackups__not_now">Hindi na muna</string>
 
     <!-- Title of a megaphone shown to prompt the user to open Signal on their primary device -->
     <string name="InactivePrimary__title">I-open ang Signal sa iyong phone</string>
@@ -9017,9 +9010,9 @@
     <!-- Backups feature label for informing the user that they can delete their backup at any time -->
     <string name="MessageBackupsEducationScreen__delete_your_backup_anytime">Burahin ang backup mo anumang oras</string>
     <!-- Action button label to proceed with backups activation -->
-    <string name="MessageBackupsEducationScreen__enable_backups">I-enable ang mga backup?</string>
-    <!-- Action button label to learn more -->
-    <string name="MessageBackupsEducationScreen__learn_more">Matuto pa</string>
+    <string name="MessageBackupsEducationScreen__continue">Magpatuloy</string>
+    <!-- Action button label to leave the backups activation flow without enabling backups -->
+    <string name="MessageBackupsEducationScreen__not_now">Hindi na muna</string>
 
     <!-- MessageBackupsKeyEducationScreen -->
     <!-- Screen headline -->
@@ -9153,6 +9146,26 @@
     <string name="MessageBackupsKeyVerifyScreen__see_key_again">Tingnan ulit ang key</string>
     <!-- Confirm your key button text to move onto next screen in flow -->
     <string name="MessageBackupsKeyVerifyScreen__next">Susunod</string>
+    <!-- Confirm your key subtitle shown to users whose recovery key came with their Signal Login rather than being recorded during this flow -->
+    <string name="MessageBackupsKeyVerifyScreen__enter_the_recovery_key_from_your_signal_login">Enter the recovery key from your Signal Login</string>
+
+    <!-- MessageBackupsConfirmRecoveryKeyScreen -->
+    <!-- Screen headline asking the user to confirm the recovery key they received with their Signal Login -->
+    <string name="MessageBackupsConfirmRecoveryKeyScreen__confirm_your_recovery_key">Kumpirmahin ang iyong recovery key</string>
+    <!-- Screen subtitle explaining what the recovery key is and why it is needed -->
+    <string name="MessageBackupsConfirmRecoveryKeyScreen__your_recovery_key_is_a_64_character_code">Your recovery key is a 64-character code you received with your Signal Login. It\'s required to restore your backup. If you forget your key, you will not be able to recover your account.</string>
+    <!-- Caption above the action buttons warning the user that the password manager will prompt them next -->
+    <string name="MessageBackupsConfirmRecoveryKeyScreen__you_will_be_prompted_with_your_saved_password">You will be prompted with your saved password in the next step.</string>
+    <!-- Action button label to confirm the recovery key using the saved password manager credential -->
+    <string name="MessageBackupsConfirmRecoveryKeyScreen__confirm_recovery_key">Kumpirmahin ang iyong recovery key</string>
+    <!-- Action button label to type the recovery key in by hand instead of using the password manager -->
+    <string name="MessageBackupsConfirmRecoveryKeyScreen__enter_manually">Enter manually</string>
+    <!-- Title of the dialog shown when the recovery key from the password manager did not match -->
+    <string name="MessageBackupsConfirmRecoveryKeyScreen__error_confirming_recovery_key">Nagkaroon ng error sa pag-confirm ng recovery key</string>
+    <!-- Body of the dialog shown when the recovery key from the password manager did not match -->
+    <string name="MessageBackupsConfirmRecoveryKeyScreen__your_recovery_key_could_not_be_confirmed">Your recovery key could not be confirmed. Make sure you\'ve saved your Signal Login in your password manager, or enter your recovery key manually.</string>
+    <!-- Toast shown when the recovery key from the password manager matched -->
+    <string name="MessageBackupsConfirmRecoveryKeyScreen__recovery_key_confirmed">Confirmed ang recovery key</string>
 
     <!-- Verify your key title -->
     <string name="VerifyBackupPinScreen__enter_your_backup_key">Ilagay ang iyong recovery key</string>
@@ -9954,74 +9967,61 @@
     <!-- Button declining to paste the recovery key -->
     <string name="RecoveryKeyWarningDialog__dont_share">Huwag i-share</string>
 
-    <!-- Notification body for unread reminders. First two placeholders are the number of unread messages and calls, last two are the summaries for mentions and replies -->
-    <string name="UnreadReminderJob__calls_and_unread_full_summary">You have %1$s and %2$s including %3$s and %4$s.</string>
-    <!-- Notification body for unread reminders. First two placeholders are the number of unread messages and calls, third is a summary of mentions or replies -->
-    <string name="UnreadReminderJob__calls_and_unread_summary">You have %1$s and %2$s including %3$s.</string>
-    <!-- Notification body for unread reminders. First two placeholders are the number of unread messages and calls, third is a list of recipients who sent them -->
-    <string name="UnreadReminderJob__calls_and_unread_author">You have %1$s and %2$s from %3$s.</string>
     <!-- Notification body for unread reminders. First placeholder is unread messages, second is a summary of unread mentions or replies -->
-    <string name="UnreadReminderJob__unread_one_summary">You have %1$s, including %2$s.</string>
+    <string name="UnreadReminderJob__unread_one_summary">Mayroon kang %1$s, kasama ang %2$s.</string>
     <!-- Notification body for unread reminders. First placeholder is unread messages, second is a summary of unread mentions, third replies -->
-    <string name="UnreadReminderJob__unread_both_summary">You have %1$s, including %2$s and %3$s.</string>
+    <string name="UnreadReminderJob__unread_both_summary">Mayroon kang %1$s, kasama ang %2$s at %3$s.</string>
     <!-- Notification body for unread reminders. First placeholder is unread messages, second is a list of people who sent them -->
-    <string name="UnreadReminderJob__calls_or_unread_author">You have %1$s from %2$s.</string>
-    <!-- Notification body for unread reminders. First placeholder is unread messages or unread calls -->
-    <string name="UnreadReminderJob__calls_or_unread">You have %1$s.</string>
-    <!-- Notification body for unread reminders. First placeholder is unread messages, second is unread calls. -->
-    <string name="UnreadReminderJob__calls_and_unread">You have %1$s and %2$s.</string>
-    <!-- Notification placeholder for unread calls -->
-    <plurals name="UnreadReminderJob__calls">
-        <item quantity="one">%1$d missed call</item>
-        <item quantity="other">%1$d missed calls</item>
-    </plurals>
+    <string name="UnreadReminderJob__calls_or_unread_author">Mayroon kang %1$s mula kay %2$s.</string>
+    <!-- Notification body for unread reminders. First placeholder is unread messages -->
+    <string name="UnreadReminderJob__calls_or_unread">Mayroon kang %1$s.</string>
     <!-- Notification placeholder for unread messages -->
     <plurals name="UnreadReminderJob__messages">
-        <item quantity="one">%1$d hindi pa nabasang mensahe</item>
-        <item quantity="other">%1$d hindi pa nabasang mensahe</item>
+        <item quantity="one">%1$d unread message</item>
+        <item quantity="other">%1$d unread messages</item>
     </plurals>
     <!-- Notification placeholder for a single recipient who sent unread messages -->
     <string name="UnreadReminderJob__authors_one">%1$s</string>
     <!-- Notification placeholder for two recipients who sent unread messages -->
     <string name="UnreadReminderJob__authors_two">%1$s at %2$s</string>
     <!-- Notification placeholder for three or more recipients who sent unread messages -->
-    <string name="UnreadReminderJob__authors_many">%1$s and others</string>
+    <string name="UnreadReminderJob__authors_many">%1$s at iba pa</string>
     <!-- Notification placeholder that sums up a single unread mention. Placeholder is the name of the person who sent the message -->
-    <string name="UnreadReminderJob__mentions_one">a mention of you by %1$s</string>
+    <string name="UnreadReminderJob__mentions_one">isang mention sa \'yo ni %1$s</string>
     <!-- Notification placeholder that sums up unread mentions from two people. First placeholder is the number of mentions, second and third are the names of the people who sent them -->
     <plurals name="UnreadReminderJob__mentions_two">
-        <item quantity="one">%1$d mentions of you by %2$s and %3$s</item>
-        <item quantity="other">%1$d mentions of you by %2$s and %3$s</item>
+        <item quantity="one">%1$d mentions sa\'yo ni %2$s at %3$s</item>
+        <item quantity="other">%1$d mentions sa \'yo ni %2$s at %3$s</item>
     </plurals>
     <!-- Notification placeholder that sums up unread mentions from three or more people. First placeholder is the number of mentions, second is the name of one person who sent them -->
     <plurals name="UnreadReminderJob__mentions_many">
-        <item quantity="one">%1$d mentions of you by %2$s and others</item>
-        <item quantity="other">%1$d mentions of you by %2$s and others</item>
+        <item quantity="one">%1$d mentions sa \'yo ni %2$s at iba pa</item>
+        <item quantity="other">%1$d mentions sa \'yo ni %2$s at iba pa</item>
     </plurals>
     <!-- Notification placeholder that sums up a single unread reply. Placeholder is the name of the person who sent the message -->
-    <string name="UnreadReminderJob__replies_one">a reply from %1$s</string>
+    <string name="UnreadReminderJob__replies_one">isang reply mula kay %1$s</string>
     <!-- Notification placeholder that sums up unread replies from two people. First placeholder is the number of replies, second and third are the names of the people who sent them -->
     <plurals name="UnreadReminderJob__replies_two">
-        <item quantity="one">%1$d replies from %2$s and %3$s</item>
-        <item quantity="other">%1$d replies from %2$s and %3$s</item>
+        <item quantity="one">%1$d replies mula kanila %2$s at %3$s</item>
+        <item quantity="other">%1$d replies mula kanila %2$s at %3$s</item>
     </plurals>
     <!-- Notification placeholder that sums up unread replies from three or more people. First placeholder is the number of replies, second is the name of one person who sent them -->
     <plurals name="UnreadReminderJob__replies_many">
-        <item quantity="one">%1$d replies from %2$s and others</item>
-        <item quantity="other">%1$d replies from %2$s and others</item>
+        <item quantity="one">%1$d replies mula kanila %2$s at iba pa</item>
+        <item quantity="other">%1$d replies mula kanila %2$s at iba pa</item>
     </plurals>
 
     <!-- Title of the screen where the user chooses which parts of a contact to share -->
-    <string name="ShareContactScreen__share_contact">Share contact</string>
+    <string name="ShareContactScreen__share_contact">I-share ang contact</string>
 
     <!-- Label beneath the company name of the contact being shared -->
-    <string name="ShareContactScreen__company">Company</string>
+    <string name="ShareContactScreen__company">Kompanya</string>
     <!-- Label beneath a shared nickname value -->
     <string name="ShareContactScreen__nickname">Nickname</string>
     <!-- Label beneath a shared note value -->
     <string name="ShareContactScreen__notes">Notes</string>
     <!-- Title of the sheet where the user picks which photo to share -->
-    <string name="ShareContactScreen__select_a_photo_to_share">Select a photo to share</string>
+    <string name="ShareContactScreen__select_a_photo_to_share">Pumili ng ise-share na photo</string>
     <!-- Button that confirms the chosen photo and closes the photo picker sheet -->
     <string name="ShareContactScreen__done">Tapos na</string>
     <!-- Accessibility label for the button that sends the contact card -->
@@ -10046,23 +10046,23 @@
     <!-- Context menu entry that starts an audio call -->
     <string name="SharedContactDetailsScreen__audio_call">Audio call</string>
     <!-- Context menu entry that opens a shared postal address in a map app -->
-    <string name="SharedContactDetailsScreen__open_in_maps">Open in Maps</string>
+    <string name="SharedContactDetailsScreen__open_in_maps">Buksan sa Maps</string>
     <!-- Context menu entry that copies a shared contact detail to the clipboard -->
     <string name="SharedContactDetailsScreen__copy">Kopyahin</string>
     <!-- Row that invites a shared contact who is not yet on Signal -->
     <string name="SharedContactDetailsScreen__invite_to_signal">Imbitahan sa Signal</string>
     <!-- Row that saves a shared contact into the device address book -->
-    <string name="SharedContactDetailsScreen__add_to_phone_contacts">Add to phone contacts</string>
+    <string name="SharedContactDetailsScreen__add_to_phone_contacts">I-add sa phone contacts</string>
     <!-- Row that adds a shared contact to a Signal group -->
     <string name="SharedContactDetailsScreen__add_to_a_group">I-add sa isang group</string>
     <!-- Toast shown after copying a shared contact detail -->
-    <string name="SharedContactDetailsScreen__copied">Copied</string>
+    <string name="SharedContactDetailsScreen__copied">Nakopya</string>
     <!-- Toast shown when there is no contacts app to save a shared contact into -->
-    <string name="SharedContactDetailsScreen__couldnt_open_contacts">Couldn\'t open Contacts</string>
+    <string name="SharedContactDetailsScreen__couldnt_open_contacts">Hindi mabuksan ang Contacts</string>
     <!-- Toast shown when there is no map app to open a shared address in -->
-    <string name="SharedContactDetailsScreen__couldnt_open_maps">Couldn\'t open maps</string>
+    <string name="SharedContactDetailsScreen__couldnt_open_maps">Hindi mabuksan ang maps</string>
     <!-- Subject line of an email invitation to Signal -->
-    <string name="SharedContactDetailsScreen__join_me_on_signal">Join me on Signal</string>
+    <string name="SharedContactDetailsScreen__join_me_on_signal">Samahan ako sa Signal</string>
 
     <!-- EOF -->
 </resources>

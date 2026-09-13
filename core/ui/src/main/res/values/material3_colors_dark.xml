@@ -7,6 +7,7 @@
     <color name="signal_dark_colorSurface">#1D1822</color>
     <color name="signal_dark_colorSurfaceVariant">#32293A</color>
     <color name="signal_dark_colorBackground">#1D1822</color>
+    <color name="signal_dark_colorSurfaceVariantFill">#33FFFFFF</color>
     <color name="signal_dark_colorError">#FFB4A9</color>
     <color name="signal_dark_colorErrorContainer">#930006</color>
     <color name="signal_dark_colorOnPrimary">#2A1E38</color>
@@ -19,6 +20,7 @@
     <color name="signal_dark_colorOnBackground">#E3DEE8</color>
     <color name="signal_dark_colorOutline">#605C65</color>
     <color name="signal_dark_neutralSurface">#14FFFFFF</color>
+    <color name="signal_dark_neutralFill">#33FFFFFF</color>
     <color name="signal_dark_colorOnCustom">#FFFFFF</color>
     <color name="signal_dark_colorOnCustomVariant">#B3FFFFFF</color>
 

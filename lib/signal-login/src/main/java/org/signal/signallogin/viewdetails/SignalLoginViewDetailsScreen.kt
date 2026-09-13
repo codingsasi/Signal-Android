@@ -6,10 +6,7 @@
 package org.signal.signallogin.viewdetails
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,31 +23,23 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.signal.core.ui.compose.Buttons
 import org.signal.core.ui.compose.DayNightPreviews
 import org.signal.core.ui.compose.Previews
 import org.signal.core.ui.compose.Scaffolds
 import org.signal.core.ui.compose.SignalIcons
-import org.signal.core.ui.compose.Texts
-import org.signal.core.ui.compose.horizontalGutters
-import org.signal.core.ui.compose.theme.SignalTheme
 import org.signal.signallogin.R
 import org.signal.signallogin.SignalLoginTestTags
-import org.signal.signallogin.fonts.MonoTypeface
+import org.signal.signallogin.beta.SignalLoginBetaTag
+import org.signal.signallogin.details.SignalLoginKeyDetails
 
 /** Size of the miniature credential card artwork shown at the top of the screen, from the design. */
 private val MINI_CARD_WIDTH = 175.dp
@@ -60,11 +49,6 @@ private val MINI_CARD_HEIGHT = 100.dp
 private val MINI_CARD_CORNER_RADIUS = 13.dp
 
 private val BUTTON_MAX_WIDTH = 331.dp
-
-private const val GROUPS_PER_ROW = 4
-
-/** The least amount of space allowed between recovery key groups before falling back to natural text wrapping. */
-private val MIN_GROUP_SPACING = 12.dp
 
 /**
  * Shows the user the full keys that make up their Signal Login and offers ways to save them.
@@ -80,6 +64,7 @@ fun SignalLoginViewDetailsScreen(
     onNavigationClick = { onEvent(SignalLoginViewDetailsScreenEvents.BackClicked) },
     navigationIcon = SignalIcons.ArrowStart.imageVector,
     navigationContentDescription = stringResource(R.string.SignalLoginViewDetailsScreen__navigate_back),
+    titleContent = { _, title -> TitleWithBetaTag(title) },
     modifier = modifier.testTag(SignalLoginTestTags.VIEW_DETAILS_SCREEN)
   ) { paddingValues ->
     Column(
@@ -101,17 +86,32 @@ fun SignalLoginViewDetailsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Texts.SectionHeader(text = stringResource(R.string.SignalLoginViewDetailsScreen__account_key))
-
-        KeyBlock(text = state.accountKey)
-
-        Texts.SectionHeader(text = stringResource(R.string.SignalLoginViewDetailsScreen__recovery_key))
-
-        RecoveryKeyBlock(groups = state.recoveryKeyGroups)
+        SignalLoginKeyDetails(
+          accountId = state.accountKey,
+          recoveryKeyGroups = state.recoveryKeyGroups,
+          onCopyAccountId = { onEvent(SignalLoginViewDetailsScreenEvents.CopyAccountIdClicked(it)) },
+          onCopyRecoveryKey = { onEvent(SignalLoginViewDetailsScreenEvents.CopyRecoveryKeyClicked(it)) }
+        )
       }
 
       Footer(onEvent = onEvent)
     }
+  }
+}
+
+@Composable
+private fun TitleWithBetaTag(title: String) {
+  Row(
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(8.dp)
+  ) {
+    Text(
+      text = title,
+      style = MaterialTheme.typography.titleLarge,
+      modifier = Modifier.weight(1f, fill = false)
+    )
+
+    SignalLoginBetaTag()
   }
 }
 
@@ -127,91 +127,6 @@ private fun MiniCard(modifier: Modifier = Modifier) {
     modifier = modifier
       .size(width = MINI_CARD_WIDTH, height = MINI_CARD_HEIGHT)
       .shadow(elevation = 6.dp, shape = RoundedCornerShape(MINI_CARD_CORNER_RADIUS))
-  )
-}
-
-/**
- * A full credential rendered in the special monospace font on a rounded surface.
- */
-@Composable
-private fun KeyBlock(
-  text: String,
-  modifier: Modifier = Modifier
-) {
-  Box(modifier = modifier.keyBlockSurface()) {
-    Text(
-      text = text,
-      style = keyTextStyle()
-    )
-  }
-}
-
-/**
- * The recovery key rendered as character groups. When four groups fit per row with at least
- * [MIN_GROUP_SPACING] between them, renders rows of four groups evenly spaced across the full
- * width. Otherwise renders the whole key as a single space-separated string that wraps naturally.
- */
-@Composable
-private fun RecoveryKeyBlock(
-  groups: List<String>,
-  modifier: Modifier = Modifier
-) {
-  BoxWithConstraints(modifier = modifier.keyBlockSurface()) {
-    val style = keyTextStyle()
-    val textMeasurer = rememberTextMeasurer()
-    val maxWidth = constraints.maxWidth
-
-    val groupWidth = remember(groups, style) {
-      groups.maxOfOrNull { group -> textMeasurer.measure(text = group, style = style).size.width } ?: 0
-    }
-
-    val minSpacing = with(LocalDensity.current) { MIN_GROUP_SPACING.roundToPx() }
-    val fitsFourPerRow = groupWidth * GROUPS_PER_ROW + minSpacing * (GROUPS_PER_ROW - 1) <= maxWidth
-
-    if (fitsFourPerRow) {
-      val spacing = with(LocalDensity.current) { ((maxWidth - groupWidth * GROUPS_PER_ROW) / (GROUPS_PER_ROW - 1)).toDp() }
-
-      Column {
-        groups.chunked(GROUPS_PER_ROW).forEach { row ->
-          Row(
-            horizontalArrangement = Arrangement.spacedBy(spacing),
-            modifier = Modifier.fillMaxWidth()
-          ) {
-            row.forEach { group ->
-              Text(
-                text = group,
-                style = style
-              )
-            }
-          }
-        }
-      }
-    } else {
-      Text(
-        text = groups.joinToString(separator = " "),
-        style = style
-      )
-    }
-  }
-}
-
-@Composable
-private fun Modifier.keyBlockSurface(): Modifier {
-  return this
-    .horizontalGutters()
-    .fillMaxWidth()
-    .clip(RoundedCornerShape(18.dp))
-    .background(SignalTheme.colors.colorSurface2)
-    .padding(horizontal = 28.dp, vertical = 20.dp)
-}
-
-@Composable
-private fun keyTextStyle(): TextStyle {
-  return MaterialTheme.typography.bodyLarge.copy(
-    fontFamily = MonoTypeface.fontFamily(),
-    fontSize = 18.sp,
-    lineHeight = 28.sp,
-    letterSpacing = 1.44.sp
   )
 }
 

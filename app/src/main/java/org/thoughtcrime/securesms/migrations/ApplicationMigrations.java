@@ -214,9 +214,11 @@ public class ApplicationMigrations {
     static final int GROUP_DELETED_AT_BACKFILL     = 169;
     static final int KT_RESET_FAILURE              = 170;
     static final int ENABLE_MUTED_CALL_SETTING     = 171;
+    static final int CLEAR_ZK_CREDENTIALS          = 172;
+    static final int SVR2_ENCLAVE_UPDATE_7         = 173;
   }
 
-  public static final int CURRENT_VERSION = 171;
+  public static final int CURRENT_VERSION = 173;
 
   /**
    * This *must* be called after the {@link JobManager} has been instantiated, but *before* the call
@@ -989,6 +991,14 @@ public class ApplicationMigrations {
 
     if (lastSeenVersion < Version.ENABLE_MUTED_CALL_SETTING) {
       jobs.put(Version.ENABLE_MUTED_CALL_SETTING, new EnableMutedCallsMigrationJob());
+    }
+
+    if (lastSeenVersion < Version.CLEAR_ZK_CREDENTIALS) {
+      jobs.put(Version.CLEAR_ZK_CREDENTIALS, new ClearZkCredentialsMigrationJob());
+    }
+
+    if (lastSeenVersion < Version.SVR2_ENCLAVE_UPDATE_7) {
+      jobs.put(Version.SVR2_ENCLAVE_UPDATE_7, new Svr2MirrorMigrationJob());
     }
 
     return jobs;

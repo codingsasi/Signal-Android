@@ -6,8 +6,6 @@
 package org.signal.registration.screens.addusername
 
 import androidx.annotation.VisibleForTesting
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
@@ -90,7 +88,9 @@ class AddUsernameViewModel(
       is AddUsernameScreenEvents.ReservationCompleted -> applyReservationCompleted(state, event, stateEmitter)
       is AddUsernameScreenEvents.LearnMoreClicked -> stateEmitter(state.copy(dialogs = state.dialogs.copy(learnMore = true)))
       is AddUsernameScreenEvents.LearnMoreDialogDismissed -> stateEmitter(state.copy(dialogs = state.dialogs.copy(learnMore = false)))
-      is AddUsernameScreenEvents.SkipClicked -> applySkipClicked(parentEventEmitter)
+      is AddUsernameScreenEvents.SkipClicked -> stateEmitter(state.copy(dialogs = state.dialogs.copy(confirmSkip = true)))
+      is AddUsernameScreenEvents.SkipConfirmed -> applySkipConfirmed(parentEventEmitter)
+      is AddUsernameScreenEvents.SkipDialogDismissed -> stateEmitter(state.copy(dialogs = state.dialogs.copy(confirmSkip = false)))
       is AddUsernameScreenEvents.NextClicked -> applyNextClicked(state, parentEventEmitter, stateEmitter)
       is AddUsernameScreenEvents.NetworkErrorDialogDismissed -> applyDialogDismissed(state, stateEmitter) { it.copy(networkError = false) }
       is AddUsernameScreenEvents.UnknownErrorDialogDismissed -> applyDialogDismissed(state, stateEmitter) { it.copy(unknownError = false) }
@@ -119,19 +119,22 @@ class AddUsernameViewModel(
   }
 
   /**
-   * A blank discriminator hands control back to the service, matching the behavior of clearing the field in the app's
-   * username editor.
+   * Non-digits are dropped as they're typed, since a discriminator can only ever be digits. A blank discriminator hands
+   * control back to the service, matching the behavior of clearing the field in the app's username editor.
    */
   private fun applyDiscriminatorChanged(state: AddUsernameState, discriminator: String, stateEmitter: (AddUsernameState) -> Unit) {
-    if (discriminator == state.discriminator) {
+    val digitsOnly = discriminator.filter { it in '0'..'9' }
+    val isUserSet = digitsOnly.isNotEmpty()
+
+    if (digitsOnly == state.discriminator || (discriminator.isNotEmpty() && digitsOnly.isEmpty())) {
       return
     }
 
     reserveJob?.cancel()
 
     val updated = state.copy(
-      discriminator = discriminator,
-      isDiscriminatorUserSet = discriminator.isNotBlank(),
+      discriminator = digitsOnly,
+      isDiscriminatorUserSet = isUserSet,
       validationError = null,
       reservation = null,
       isReserving = false
@@ -224,7 +227,7 @@ class AddUsernameViewModel(
     }
   }
 
-  private fun applySkipClicked(parentEventEmitter: (RegistrationFlowEvent) -> Unit) {
+  private fun applySkipConfirmed(parentEventEmitter: (RegistrationFlowEvent) -> Unit) {
     Log.i(TAG, "Skipping username creation.")
     parentEventEmitter(RegistrationFlowEvent.RegistrationComplete)
   }
@@ -308,23 +311,16 @@ class AddUsernameViewModel(
   }
 
   private fun checkDiscriminator(discriminator: String): AddUsernameState.ValidationError? {
-    return when (UsernameUtil.checkDiscriminator(discriminator)) {
+    return when (val reason = UsernameUtil.checkDiscriminator(discriminator)) {
       null -> null
       UsernameUtil.InvalidReason.TOO_SHORT -> AddUsernameState.ValidationError.DISCRIMINATOR_TOO_SHORT
       UsernameUtil.InvalidReason.TOO_LONG -> AddUsernameState.ValidationError.DISCRIMINATOR_TOO_LONG
       UsernameUtil.InvalidReason.INVALID_NUMBER_00 -> AddUsernameState.ValidationError.DISCRIMINATOR_CANNOT_BE_00
       UsernameUtil.InvalidReason.INVALID_NUMBER_PREFIX_0 -> AddUsernameState.ValidationError.DISCRIMINATOR_CANNOT_START_WITH_ZERO
-      else -> AddUsernameState.ValidationError.DISCRIMINATOR_INVALID_CHARACTERS
-    }
-  }
-
-  class Factory(
-    private val repository: RegistrationRepository,
-    private val parentEventEmitter: (RegistrationFlowEvent) -> Unit
-  ) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-      return AddUsernameViewModel(repository, parentEventEmitter) as T
+      else -> {
+        Log.w(TAG, "Unexpected discriminator validation failure: $reason")
+        AddUsernameState.ValidationError.DISCRIMINATOR_NOT_AVAILABLE
+      }
     }
   }
 }

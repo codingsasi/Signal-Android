@@ -6,6 +6,7 @@
 package org.thoughtcrime.securesms.conversation.v2
 
 import android.content.Context
+import android.view.View
 import android.widget.EditText
 import org.thoughtcrime.securesms.components.compose.mediakeyboard.MediaKeyboardController
 import org.thoughtcrime.securesms.components.compose.mediakeyboard.MediaKeyboardKey
@@ -27,6 +28,9 @@ class ChatInputController(
 
   private val listeners: MutableSet<Listener> = mutableSetOf()
   private val keyboardStateListeners: MutableSet<KeyboardStateListener> = mutableSetOf()
+
+  /** What [runAfterAllHidden] is waiting on. */
+  private var pendingHiddenAction: (() -> Unit)? = null
 
   val isInputShowing: Boolean
     get() = controller.isShowing
@@ -54,11 +58,16 @@ class ChatInputController(
   fun clearListeners() {
     listeners.clear()
     keyboardStateListeners.clear()
+    pendingHiddenAction = null
   }
 
   fun onKeyboardVisibilityChanged(visible: Boolean) {
     keyboardStateListeners.toList().forEach {
       if (visible) it.onKeyboardShown() else it.onKeyboardHidden()
+    }
+
+    if (!visible) {
+      runPendingHiddenAction()
     }
   }
 
@@ -72,11 +81,13 @@ class ChatInputController(
 
   fun onInputHidden() {
     listeners.toList().forEach { it.onInputHidden() }
+    runPendingHiddenAction()
   }
 
-  fun showSoftkey(editText: EditText) {
+  /** @param imeTarget The field to bring the system keyboard up for, which need not be the input panel's. */
+  fun showSoftkey(imeTarget: View) {
     controller.hideForSystemKeyboard()
-    ViewUtil.focusAndShowKeyboard(editText)
+    ViewUtil.focusAndShowKeyboard(imeTarget)
   }
 
   fun hideAll(imeTarget: EditText) {
@@ -90,37 +101,33 @@ class ChatInputController(
     controller.hide()
   }
 
+  /**
+   * Unconditional, since [isKeyboardShowing] only knows about keyboards that claim space. A floating
+   * one reports no inset to read it from and still needs putting away.
+   */
   fun hideKeyboard(imeTarget: EditText) {
-    if (isKeyboardShowing) {
-      ViewUtil.hideKeyboard(context, imeTarget)
-    }
+    ViewUtil.hideKeyboard(context, imeTarget)
   }
 
+  /**
+   * Runs [onHidden] once whatever is up has reported itself away, or right now if nothing is.
+   * Only one action is queued at a time; a second call replaces the first.
+   */
   fun runAfterAllHidden(imeTarget: EditText, onHidden: () -> Unit) {
-    if (isInputShowing || isKeyboardShowing) {
-      val listener = object : Listener, KeyboardStateListener {
-        override fun onInputHidden() {
-          onHidden()
-          removeInputListener(this)
-          removeKeyboardStateListener(this)
-        }
-
-        override fun onKeyboardHidden() {
-          onHidden()
-          removeInputListener(this)
-          removeKeyboardStateListener(this)
-        }
-
-        override fun onInputShown(key: MediaKeyboardKey) = Unit
-        override fun onKeyboardShown() = Unit
-      }
-
-      addInputListener(listener)
-      addKeyboardStateListener(listener)
-      hideAll(imeTarget)
-    } else {
+    if (!isInputShowing && !isKeyboardShowing) {
       onHidden()
+      return
     }
+
+    pendingHiddenAction = onHidden
+    hideAll(imeTarget)
+  }
+
+  private fun runPendingHiddenAction() {
+    val action = pendingHiddenAction ?: return
+
+    pendingHiddenAction = null
+    action()
   }
 
   /**

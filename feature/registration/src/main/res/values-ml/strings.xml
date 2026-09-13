@@ -45,7 +45,7 @@
     <string name="RegistrationActivity_select_a_country">ഒരു രാജ്യം തിരഞ്ഞെടുക്കുക</string>
     <string name="RegistrationActivity_phone_number_description">ഫോൺ നമ്പർ</string>
     <!-- Label the phone number field takes on when what has been typed reads as an account ID rather than a number -->
-    <string name="RegistrationActivity_account_id">Account ID</string>
+    <string name="RegistrationActivity_account_id">അക്കൗണ്ട് ഐഡി</string>
     <!-- Error shown beneath the phone number field when the entered number is not valid -->
     <string name="RegistrationActivity_not_a_valid_phone_number">ഇത് സാധുവായ ഒരു ഫോൺ നമ്പർ അല്ല</string>
     <!-- Dialog title shown when the entered phone number is rejected as invalid -->
@@ -247,7 +247,7 @@
     <!-- Title of the dialog shown when the entered recovery key is correct, but the account has no Signal Backup to restore -->
     <string name="EnterAepScreen__no_backup_found">ബാക്കപ്പ് ഒന്നും കണ്ടെത്താനായില്ല</string>
     <!-- Body of the dialog shown when the entered recovery key is correct, but the account has no Signal Backup to restore -->
-    <string name="EnterAepScreen__no_backup_found_body">Your recovery key is correct, but there\'s no Signal Backup for this account. Go back to choose another way to restore, or continue without restoring.</string>
+    <string name="EnterAepScreen__no_backup_found_body">നിങ്ങളുടെ വീണ്ടെടുക്കൽ കീ ശരിയാണ്, എന്നാൽ ഈ അക്കൗണ്ടിനായി Signal ബാക്കപ്പ് ലഭ്യമല്ല. പുനഃസ്ഥാപിക്കാൻ മറ്റൊരു വഴി തിരഞ്ഞെടുക്കാൻ തിരികെ പോകുക, അല്ലെങ്കിൽ പുനഃസ്ഥാപിക്കാതെ തുടരുക.</string>
     <!-- Text shown while preparing the restore -->
     <string name="LocalBackupRestoreScreen__preparing_restore">പുനഃസ്ഥാപിക്കാൻ തയാറെടുക്കുന്നു…</string>
     <!-- Title shown while restore is in progress -->
@@ -614,9 +614,9 @@
 
     <!-- Signal Login purchase screen -->
     <!-- Title of the screen where the user buys a Signal Login to register without a phone number. -->
-    <string name="SignalLoginPaymentScreen__signal_login">Signal ലോഗിൻ</string>
+    <string name="SignalLoginPaymentScreen__signal_login">Signal Login</string>
     <!-- Description of what a Signal Login is. Followed by a "learn more" link. -->
-    <string name="SignalLoginPaymentScreen__register_without_a_phone_number">Signal ലോഗിൻ ഉപയോഗിച്ച് ഫോൺ നമ്പറില്ലാതെ രജിസ്റ്റർ ചെയ്യുക. ഒരു ഒറ്റത്തവണ വാങ്ങൽ വഴി, ആരംഭിക്കുന്നതിനായി നിങ്ങൾക്ക് ഒരു അക്കൗണ്ട് കീ ലഭിക്കും.</string>
+    <string name="SignalLoginPaymentScreen__register_without_a_phone_number">Signal Login ഉപയോഗിച്ച് ഫോൺ നമ്പറില്ലാതെ രജിസ്റ്റർ ചെയ്യുക. ഒരു ഒറ്റത്തവണ വാങ്ങൽ വഴി, ആരംഭിക്കുന്നതിനായി നിങ്ങൾക്ക് ഒരു അക്കൗണ്ട് കീ ലഭിക്കും.</string>
     <!-- Link at the end of the description that opens a support article about Signal Login. -->
     <string name="SignalLoginPaymentScreen__learn_more">കൂടുതലറിയുക</string>
     <!-- Subtitle of the purchase option, clarifying the price is not a subscription. -->
@@ -628,7 +628,7 @@
     <!-- Selling point of the purchase option: the purchase supports Signal. -->
     <string name="SignalLoginPaymentScreen__signal_is_a_non_profit">Signal ഒരു ലാഭരഹിത സ്ഥാപനമാണ് — നിങ്ങളുടെ വാങ്ങൽ ഞങ്ങളുടെ ലക്ഷ്യത്തെ പിന്തുണയ്ക്കാൻ സഹായിക്കുന്നു</string>
     <!-- Title of the option for users who already bought a Signal Login. -->
-    <string name="SignalLoginPaymentScreen__i_have_a_signal_login">എന്റെ പക്കൽ ഒരു Signal ലോഗിൻ ഉണ്ട്</string>
+    <string name="SignalLoginPaymentScreen__i_have_a_signal_login">എന്റെ പക്കൽ ഒരു Signal Login ഉണ്ട്</string>
     <!-- Subtitle of the existing-login option. -->
     <string name="SignalLoginPaymentScreen__use_your_existing_account_key">നിങ്ങളുടെ നിലവിലുള്ള അക്കൗണ്ട് കീ ഉപയോഗിക്കുക</string>
     <!-- Selling point of the existing-login option: the account can be restored. -->
@@ -643,6 +643,16 @@
     <string name="SignalLoginPaymentScreen__continue">തുടരുക</string>
     <!-- Error shown when the purchase does not go through. -->
     <string name="SignalLoginPaymentScreen__your_purchase_could_not_be_completed">നിങ്ങളുടെ വാങ്ങൽ പൂർത്തിയാക്കാൻ കഴിഞ്ഞില്ല. നിങ്ങളിൽ നിന്ന് നിരക്ക് ഈടാക്കിയിട്ടില്ല.</string>
+    <!-- Shown in place of the price when Google Play cannot offer the purchase. -->
+    <string name="SignalLoginPaymentScreen__unavailable">Unavailable</string>
+    <!-- Label for the button that retries loading the purchase price after it failed to load. -->
+    <string name="SignalLoginPaymentScreen__retry">വീണ്ടും ശ്രമിക്കുക</string>
+    <!-- Shown in place of the price when the user already paid for a Signal Login but it was never redeemed. -->
+    <string name="SignalLoginPaymentScreen__already_paid">Already paid</string>
+    <!-- Error shown when Signal Login cannot be purchased on this device, for example because the Google Play Store is unavailable. -->
+    <string name="SignalLoginPaymentScreen__signal_login_cant_be_purchased">Signal Login can\'t be purchased on this device right now. Try again later.</string>
+    <!-- Message shown when the user\'s payment has gone through but has not finished processing yet. -->
+    <string name="SignalLoginPaymentScreen__your_payment_is_still_processing">Your payment is still processing. Come back and tap continue once it goes through, and you won\'t be charged again.</string>
     <!-- Label for the internal-testing text field where a receipt credential can be pasted to skip payment. Not shown to real users. -->
   <!-- Removed by excludeNonTranslatables <string name="SignalLoginPaymentScreen__paste_a_receipt_credential" translatable="false">Paste a receipt credential (testing)</string> -->
     <!-- Error shown when a manually-pasted receipt credential can\'t be parsed or is rejected. Internal testing only. -->
@@ -650,41 +660,81 @@
 
     <!-- Signal Login details screen -->
     <!-- Title of the screen that shows the user their newly purchased Signal Login. -->
-    <string name="SignalLoginInfoScreen__your_signal_login">നിങ്ങളുടെ Signal ലോഗിൻ</string>
+    <string name="SignalLoginInfoScreen__your_signal_login">നിങ്ങളുടെ Signal Login</string>
     <!-- Description warning the user that a lost Signal Login cannot be recovered. -->
-    <string name="SignalLoginInfoScreen__thanks_for_your_purchase">നിങ്ങളുടെ വാങ്ങലിന് നന്ദി. നിങ്ങളുടെ അക്കൗണ്ട് രജിസ്റ്റർ ചെയ്യാനും വീണ്ടെടുക്കാനും നിങ്ങളുടെ Signal ലോഗിൻ ഉപയോഗിക്കുക. നിങ്ങളുടെ കീ മറന്നുപോയാൽ, അക്കൗണ്ട് വീണ്ടെടുക്കാൻ നിങ്ങൾക്ക് കഴിയില്ല.</string>
+    <string name="SignalLoginInfoScreen__thanks_for_your_purchase">നിങ്ങളുടെ വാങ്ങലിന് നന്ദി. നിങ്ങളുടെ അക്കൗണ്ട് രജിസ്റ്റർ ചെയ്യാനും വീണ്ടെടുക്കാനും നിങ്ങളുടെ Signal Login ഉപയോഗിക്കുക. നിങ്ങളുടെ കീ മറന്നുപോയാൽ, അക്കൗണ്ട് വീണ്ടെടുക്കാൻ നിങ്ങൾക്ക് കഴിയില്ല.</string>
     <!-- Action button that stores the Signal Login in the device password manager. -->
     <string name="SignalLoginInfoScreen__save_to_password_manager">പാസ്‌വേഡ് മാനേജറിൽ സംരക്ഷിക്കുക</string>
     <!-- Action button for users who would rather write the Signal Login down themselves. -->
     <string name="SignalLoginInfoScreen__save_manually">മാനുവലായി സംരക്ഷിക്കുക</string>
     <!-- Error shown when the Signal Login could not be stored in the password manager. -->
-    <string name="SignalLoginInfoScreen__your_signal_login_could_not_be_saved">നിങ്ങളുടെ Signal ലോഗിൻ സംരക്ഷിക്കാൻ കഴിഞ്ഞില്ല. പകരം ഇത് മാനുവലായി സംരക്ഷിക്കുക.</string>
+    <string name="SignalLoginInfoScreen__your_signal_login_could_not_be_saved">നിങ്ങളുടെ Signal Login സംരക്ഷിക്കാൻ കഴിഞ്ഞില്ല. പകരം ഇത് മാനുവലായി സംരക്ഷിക്കുക.</string>
+    <!-- Title of the dialog shown when the Signal Login could not be found in the password manager after saving it. -->
+    <string name="SignalLoginInfoScreen__error_confirming_login_info">Error confirming login info</string>
+    <!-- Description telling the user that the Signal Login we saved could not be read back out of their password manager. -->
+    <string name="SignalLoginInfoScreen__your_signal_login_could_not_be_confirmed">Your Signal Login could not be confirmed. Make sure you\'ve saved it in your password manager, or save it manually.</string>
+
+    <!-- Sheet that double-checks the user\'s Signal Login really made it into their password manager -->
+    <!-- Title of the sheet asking the user to confirm their Signal Login was saved to their password manager. -->
+    <string name="ConfirmLoginSavedToPasswordManagerBottomSheet__confirm_your_login_info_is_saved">Confirm your login info is saved</string>
+    <!-- Description telling the user they are about to be asked to fill in the Signal Login they just saved. -->
+    <string name="ConfirmLoginSavedToPasswordManagerBottomSheet__confirm_that_your_login_info_was_saved">Confirm that your Signal Login was saved correctly. You will be prompted to fill in your saved password in the next step.</string>
+    <!-- Action button that starts checking the password manager for the Signal Login. -->
+    <string name="ConfirmLoginSavedToPasswordManagerBottomSheet__confirm_login_info">Confirm login info</string>
+    <!-- Action button that sends the user back to their Signal Login. -->
+    <string name="ConfirmLoginSavedToPasswordManagerBottomSheet__see_login_info_again">See login info again</string>
+
+    <!-- Save Signal Login screen -->
+    <!-- Title of the screen that spells out the Signal Login so the user can record it themselves. -->
+    <string name="SignalLoginViewDetailsForManualSaveScreen__save_your_signal_login">Save your Signal Login</string>
+    <!-- Description telling the user to keep their Signal Login somewhere safe and private. -->
+    <string name="SignalLoginViewDetailsForManualSaveScreen__store_your_signal_login_somewhere_safe">Store your Signal Login somewhere safe and secure. Never share your login info with anyone.</string>
+    <!-- Action button that saves the Signal Login to a PDF file. -->
+    <string name="SignalLoginViewDetailsForManualSaveScreen__save_as_pdf">PDF ആയി സംരക്ഷിക്കുക</string>
+    <!-- Action button for users who are done recording their Signal Login. -->
+    <string name="SignalLoginViewDetailsForManualSaveScreen__continue">തുടരുക</string>
+
+    <!-- Sheet that double-checks the user really saved their Signal Login -->
+    <!-- Title of the sheet asking the user to confirm they saved their Signal Login. -->
+    <string name="ConfirmLoginSavedBottomSheet__confirm_your_login_info_is_saved">Confirm your login info is saved</string>
+    <!-- Description warning the user that they are about to be asked for their Signal Login and that it cannot be recovered. -->
+    <string name="ConfirmLoginSavedBottomSheet__you_will_be_prompted_to_sign_in">You will be prompted to sign in with your Signal Login next. Make sure you\'ve saved or copied these details. Signal will not be able to help you recover your account.</string>
+    <!-- Action button confirming the Signal Login is saved. -->
+    <string name="ConfirmLoginSavedBottomSheet__continue">തുടരുക</string>
+    <!-- Action button that sends the user back to their Signal Login. -->
+    <string name="ConfirmLoginSavedBottomSheet__show_login_info_again">Show login info again</string>
 
     <!-- Errors shown beneath an account ID text field, wherever one is offered -->
     <!-- Error shown when too many characters were entered in an account ID field. First placeholder is how many were entered, second is the maximum. -->
     <string name="AccountIdField__too_long">വളരെ നീളമുള്ളതാണ്. %1$d/%2$d ക്യാരക്ടറുകൾ.</string>
     <!-- Error shown when the entered account ID contains characters that can\'t appear in one. -->
-    <string name="AccountIdField__invalid_account_id">Invalid account ID</string>
+    <string name="AccountIdField__invalid_account_id">അക്കൗണ്ട് ഐഡി അസാധുവാണ്</string>
 
     <!-- Signal Login credential entry screen -->
     <!-- Title of the screen where a user with an existing Signal Login types it in to log back in. -->
-    <string name="SignalLoginCredentialEntryScreen__signal_login">Signal ലോഗിൻ</string>
+    <string name="SignalLoginCredentialEntryScreen__signal_login">Signal Login</string>
     <!-- Description telling the user what to enter to log in. -->
-    <string name="SignalLoginCredentialEntryScreen__enter_your_account_id_followed_by_your_recovery_key">Enter your account ID followed by your recovery key to restore your account.</string>
+    <string name="SignalLoginCredentialEntryScreen__enter_your_account_id_followed_by_your_recovery_key">നിങ്ങളുടെ അക്കൗണ്ട് വീണ്ടെടുക്കാൻ അക്കൗണ്ട് ഐഡിയും തുടർന്ന് നിങ്ങളുടെ വീണ്ടെടുക്കൽ കീയും നൽകുക.</string>
     <!-- Label of the text field the account ID is typed into. -->
-    <string name="SignalLoginCredentialEntryScreen__account_id">Account ID</string>
+    <string name="SignalLoginCredentialEntryScreen__account_id">അക്കൗണ്ട് ഐഡി</string>
     <!-- Label of the text field the recovery key is typed into. -->
     <string name="SignalLoginCredentialEntryScreen__recovery_key">വീണ്ടെടുക്കൽ കീ</string>
     <!-- Description of the button that spells out the typed recovery key instead of masking it. -->
-    <string name="SignalLoginCredentialEntryScreen__show_recovery_key">Show recovery key</string>
+    <string name="SignalLoginCredentialEntryScreen__show_recovery_key">വീണ്ടെടുക്കൽ കീ കാണിക്കുക</string>
     <!-- Description of the button that masks the typed recovery key. -->
-    <string name="SignalLoginCredentialEntryScreen__hide_recovery_key">Hide recovery key</string>
+    <string name="SignalLoginCredentialEntryScreen__hide_recovery_key">വീണ്ടെടുക്കൽ കീ മറയ്ക്കുക</string>
     <!-- Button that opens a support article for users who can\'t find their Signal Login. -->
     <string name="SignalLoginCredentialEntryScreen__need_help">സഹായം ആവശ്യമുണ്ടോ?</string>
     <!-- Action button that submits the entered Signal Login. -->
     <string name="SignalLoginCredentialEntryScreen__next">അടുത്തത്</string>
     <!-- Error shown when the service rejects the entered login, which means one of the two halves is wrong. -->
-    <string name="SignalLoginCredentialEntryScreen__incorrect_account_id_or_recovery_key">Incorrect account ID or recovery key</string>
+    <string name="SignalLoginCredentialEntryScreen__incorrect_account_id_or_recovery_key">അക്കൗണ്ട് ഐഡി അല്ലെങ്കിൽ വീണ്ടെടുക്കൽ കീ തെറ്റാണ്</string>
+    <!-- Description shown instead when the user is typing back the Signal Login they were just given, to check they recorded it correctly. -->
+    <string name="SignalLoginCredentialEntryScreen__enter_your_signal_login_to_confirm_it_was_recorded_correctly">Enter your Signal Login to confirm it was recorded correctly.</string>
+    <!-- Button that takes the user back to their Signal Login if they can\'t remember what they recorded. -->
+    <string name="SignalLoginCredentialEntryScreen__show_login_info_again">Show login info again</string>
+    <!-- Error shown when what the user typed back doesn\'t match the Signal Login they were given. -->
+    <string name="SignalLoginCredentialEntryScreen__that_doesnt_match_the_signal_login_you_were_shown">That doesn\'t match the Signal Login you were shown</string>
 
     <!-- Add username screen -->
     <!-- Title of the screen offering the user an optional username. -->
@@ -725,12 +775,18 @@
     <string name="AddUsernameScreen__enter_a_minimum_of_d_digits">ഉപയോക്തൃനാമം അസാധുവാണ്, കുറഞ്ഞത് %1$d അക്കങ്ങൾ നൽകുക.</string>
     <!-- Validation error shown when the number the user entered after their username has too many digits. -->
     <string name="AddUsernameScreen__enter_a_maximum_of_d_digits">ഉപയോക്തൃനാമം അസാധുവാണ്, പരമാവധി %1$d അക്കങ്ങൾ നൽകുക.</string>
-    <!-- Validation error shown when the number the user entered after their username contains something other than digits. -->
-    <string name="AddUsernameScreen__numbers_can_only_contain_digits">Invalid username, numbers can only contain digits.</string>
     <!-- Validation error shown when the number the user entered after their username is 00. -->
     <string name="AddUsernameScreen__this_number_cant_be_00">ഈ സംഖ്യ 00 ആകാൻ പാടില്ല. 1-നും 9-നും ഇടയിലുള്ള ഒരു അക്കം നൽകുക</string>
     <!-- Validation error shown when the number the user entered after their username has a leading zero. -->
     <string name="AddUsernameScreen__this_number_cant_start_with_0">2 അക്കങ്ങളിൽ കൂടുതലുള്ള സംഖ്യകൾ 0-ൽ ആരംഭിക്കാനാകില്ല</string>
+    <!-- Title of the dialog confirming the user wants to skip choosing a username. -->
+    <string name="AddUsernameScreen__are_you_sure">ഉറപ്പാണോ?</string>
+    <!-- Body of the dialog confirming the user wants to skip choosing a username. -->
+    <string name="AddUsernameScreen__without_a_username_people_wont_be_able_to_find_you">Without a username people won\'t be able to find you on Signal.</string>
+    <!-- Button in the skip-username confirmation dialog that returns to the screen without skipping. -->
+    <string name="AddUsernameScreen__cancel">റദ്ദാക്കുക</string>
+    <!-- Button in the skip-username confirmation dialog that skips choosing a username. -->
+    <string name="AddUsernameScreen__continue">തുടരുക</string>
 
     <!-- ContactSupportDialog -->
     <!-- Title of the dialog asking the user whether they want to attach a debug log to their support request -->
@@ -746,7 +802,7 @@
     <!-- Title of the two-factor authentication code entry screen -->
     <string name="TotpEntryScreen__two_factor_authentication">ടൂ-ഫാക്ടർ ഓതന്റിക്കേഷൻ</string>
     <!-- Subtitle explaining where to find the code -->
-    <string name="TotpEntryScreen__to_continue_enter_the_code">To continue enter the 6-digit code from your authenticator app.</string>
+    <string name="TotpEntryScreen__to_continue_enter_the_code">To continue, enter the 6-digit code from your authenticator app.</string>
     <!-- Button text to cancel entering a code -->
     <string name="TotpEntryScreen__cancel">റദ്ദാക്കുക</string>
 
@@ -754,15 +810,15 @@
     <!-- Title of the two-factor authentication method selection screen -->
     <string name="TwoFactorSelectionScreen__two_factor_authentication">ടൂ-ഫാക്ടർ ഓതന്റിക്കേഷൻ</string>
     <!-- Subtitle telling the user to pick one of the methods listed below -->
-    <string name="TwoFactorSelectionScreen__choose_a_method_below">Choose a method below to verify your account.</string>
+    <string name="TwoFactorSelectionScreen__choose_a_method_below">നിങ്ങളുടെ അക്കൗണ്ട് സ്ഥിരീകരിക്കാൻ താഴെ പറയുന്നവയിൽ നിന്ന് ഒരു രീതി തിരഞ്ഞെടുക്കുക.</string>
     <!-- Title of the card for verifying with a passkey -->
-    <string name="TwoFactorSelectionScreen__passkey">Passkey</string>
+    <string name="TwoFactorSelectionScreen__passkey">പാസ്‌കീ</string>
     <!-- Description of the card for verifying with a passkey -->
-    <string name="TwoFactorSelectionScreen__tap_to_use_your_device_biometrics">Tap to use your device biometrics or FIDO2 passkey</string>
+    <string name="TwoFactorSelectionScreen__tap_to_use_your_device_biometrics">നിങ്ങളുടെ ഉപകരണത്തിലെ ബയോമെട്രിക്സ് അല്ലെങ്കിൽ FIDO2 പാസ്‌കീ ഉപയോഗിക്കാൻ ടാപ്പ് ചെയ്യുക</string>
     <!-- Title of the card for verifying with a code from an authenticator app -->
     <string name="TwoFactorSelectionScreen__authenticator_app">ഓതന്റിക്കേറ്റർ ആപ്പ്</string>
     <!-- Description of the card for verifying with a code from an authenticator app -->
-    <string name="TwoFactorSelectionScreen__enter_a_one_time_code">Enter a one-time code generated by your authenticator app.</string>
+    <string name="TwoFactorSelectionScreen__enter_a_one_time_code">നിങ്ങളുടെ ഓതൻ്റിക്കേറ്റർ ആപ്പ് ജനറേറ്റ് ചെയ്ത ഒറ്റത്തവണ കോഡ് നൽകുക.</string>
     <!-- Button text to cancel two-factor authentication -->
     <string name="TwoFactorSelectionScreen__cancel">റദ്ദാക്കുക</string>
 </resources>

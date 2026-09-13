@@ -146,6 +146,51 @@ class AddUsernameViewModelTest {
   }
 
   @Test
+  fun `non-digits typed into the discriminator are dropped`() = runTest(testDispatcher) {
+    coEvery { mockRepository.reserveUsername("maya") } returns RequestResult.Success(Username("maya.45"))
+    coEvery { mockRepository.reserveUsername("maya", "77") } returns RequestResult.Success(Username("maya.77"))
+
+    viewModel.onEvent(AddUsernameScreenEvents.UsernameChanged("maya"))
+    advanceUntilIdle()
+    viewModel.onEvent(AddUsernameScreenEvents.DiscriminatorChanged("7a7!"))
+    advanceUntilIdle()
+
+    assertThat(viewModel.state.value.discriminator).isEqualTo("77")
+    assertThat(viewModel.state.value.validationError).isNull()
+    assertThat(viewModel.state.value.reservation).isEqualTo(Username("maya.77"))
+  }
+
+  @Test
+  fun `typing only non-digits leaves the service-assigned discriminator alone`() = runTest(testDispatcher) {
+    coEvery { mockRepository.reserveUsername("maya") } returns RequestResult.Success(Username("maya.45"))
+
+    viewModel.onEvent(AddUsernameScreenEvents.UsernameChanged("maya"))
+    advanceUntilIdle()
+    viewModel.onEvent(AddUsernameScreenEvents.DiscriminatorChanged("abc"))
+    advanceUntilIdle()
+
+    assertThat(viewModel.state.value.discriminator).isEqualTo("45")
+    assertThat(viewModel.state.value.isDiscriminatorUserSet).isFalse()
+    assertThat(viewModel.state.value.validationError).isNull()
+    assertThat(viewModel.state.value.reservation).isEqualTo(Username("maya.45"))
+  }
+
+  @Test
+  fun `clearing a service-assigned discriminator empties the field`() = runTest(testDispatcher) {
+    coEvery { mockRepository.reserveUsername("maya") } returns RequestResult.Success(Username("maya.45"))
+
+    viewModel.onEvent(AddUsernameScreenEvents.UsernameChanged("maya"))
+    advanceUntilIdle()
+    viewModel.onEvent(AddUsernameScreenEvents.DiscriminatorChanged(""))
+    advanceUntilIdle()
+
+    assertThat(viewModel.state.value.discriminator).isEmpty()
+    assertThat(viewModel.state.value.isDiscriminatorUserSet).isFalse()
+    assertThat(viewModel.state.value.requestedDiscriminator).isNull()
+    assertThat(viewModel.state.value.validationError).isNull()
+  }
+
+  @Test
   fun `a too-short discriminator produces a validation error`() = runTest(testDispatcher) {
     coEvery { mockRepository.reserveUsername("maya") } returns RequestResult.Success(Username("maya.45"))
 
@@ -354,8 +399,30 @@ class AddUsernameViewModelTest {
   }
 
   @Test
-  fun `SkipClicked completes registration`() = runTest(testDispatcher) {
+  fun `SkipClicked shows the confirmation dialog without completing registration`() = runTest(testDispatcher) {
     viewModel.onEvent(AddUsernameScreenEvents.SkipClicked)
+    advanceUntilIdle()
+
+    assertThat(viewModel.state.value.dialogs.confirmSkip).isTrue()
+    assertThat(parentEvents).isEmpty()
+  }
+
+  @Test
+  fun `dismissing the skip confirmation dialog keeps the user on the screen`() = runTest(testDispatcher) {
+    viewModel.onEvent(AddUsernameScreenEvents.SkipClicked)
+    advanceUntilIdle()
+    viewModel.onEvent(AddUsernameScreenEvents.SkipDialogDismissed)
+    advanceUntilIdle()
+
+    assertThat(viewModel.state.value.dialogs.confirmSkip).isFalse()
+    assertThat(parentEvents).isEmpty()
+  }
+
+  @Test
+  fun `SkipConfirmed completes registration`() = runTest(testDispatcher) {
+    viewModel.onEvent(AddUsernameScreenEvents.SkipClicked)
+    advanceUntilIdle()
+    viewModel.onEvent(AddUsernameScreenEvents.SkipConfirmed)
     advanceUntilIdle()
 
     assertThat(parentEvents).containsExactly(RegistrationFlowEvent.RegistrationComplete)

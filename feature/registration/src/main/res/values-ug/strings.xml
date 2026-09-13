@@ -45,7 +45,7 @@
     <string name="RegistrationActivity_select_a_country">بىر دۆلەتنى تاللاڭ</string>
     <string name="RegistrationActivity_phone_number_description">تېلېفون نومۇرىڭىز</string>
     <!-- Label the phone number field takes on when what has been typed reads as an account ID rather than a number -->
-    <string name="RegistrationActivity_account_id">Account ID</string>
+    <string name="RegistrationActivity_account_id">ھېسابات كىملىكى</string>
     <!-- Error shown beneath the phone number field when the entered number is not valid -->
     <string name="RegistrationActivity_not_a_valid_phone_number">ئىناۋەتسىز تېلېفون نومۇرى</string>
     <!-- Dialog title shown when the entered phone number is rejected as invalid -->
@@ -247,7 +247,7 @@
     <!-- Title of the dialog shown when the entered recovery key is correct, but the account has no Signal Backup to restore -->
     <string name="EnterAepScreen__no_backup_found">زاپاسلاش تېپىلمىدى</string>
     <!-- Body of the dialog shown when the entered recovery key is correct, but the account has no Signal Backup to restore -->
-    <string name="EnterAepScreen__no_backup_found_body">Your recovery key is correct, but there\'s no Signal Backup for this account. Go back to choose another way to restore, or continue without restoring.</string>
+    <string name="EnterAepScreen__no_backup_found_body">ئەسلىگە كەلتۈرۈش ئاچقۇچىڭىز توغرا، لېكىن بۇ ھېسابات ئۈچۈن Signal زاپاسلاش يوق. ئەسلىگە كەلتۈرۈش ئۈچۈن قايتىدىن باشقا بىر ئۇسۇلنى تاللاڭ، ياكى ئەسلىگە كەلتۈرمەيلا داۋاملاشتۇرۇڭ.</string>
     <!-- Text shown while preparing the restore -->
     <string name="LocalBackupRestoreScreen__preparing_restore">ئەسلىگە كەلتۈرۈشكە تەييارلىنىۋاتىدۇ…</string>
     <!-- Title shown while restore is in progress -->
@@ -612,9 +612,9 @@
 
     <!-- Signal Login purchase screen -->
     <!-- Title of the screen where the user buys a Signal Login to register without a phone number. -->
-    <string name="SignalLoginPaymentScreen__signal_login">Signal غا كىرىش</string>
+    <string name="SignalLoginPaymentScreen__signal_login">Signal Login</string>
     <!-- Description of what a Signal Login is. Followed by a "learn more" link. -->
-    <string name="SignalLoginPaymentScreen__register_without_a_phone_number">تېلېفون نومۇرىنى ئىشلەتمەي، « Signal غا كىرىش» ئارقئارقىلىق تىزىملىتىش. بىر قېتىملىق سېتىۋېلىش ئارقىلىق، ئىشلىتىشىنى باشلاش ئۈچۈن ھېسابات ئاچقۇچىغا ئېرىشىسىز.</string>
+    <string name="SignalLoginPaymentScreen__register_without_a_phone_number">تېلېفون نومۇرىنى ئىشلەتمەي، « Signal Login» ئارقىلىق تىزىملىتىش. ئىشلىتىشنى باشلاش ئۈچۈن بىر قېتىملىق سېتىۋېلىش ئارقىلىق ھېسابات ئاچقۇچىغا ئېرىشىسىز.</string>
     <!-- Link at the end of the description that opens a support article about Signal Login. -->
     <string name="SignalLoginPaymentScreen__learn_more">تەپسىلاتى</string>
     <!-- Subtitle of the purchase option, clarifying the price is not a subscription. -->
@@ -626,7 +626,7 @@
     <!-- Selling point of the purchase option: the purchase supports Signal. -->
     <string name="SignalLoginPaymentScreen__signal_is_a_non_profit">Signal پايدا ئالمايدىغان ئەپ — سىزنىڭ سېتىۋېلىشىڭىز بىزنى قوللاشقا ياردەم بېرىدۇ</string>
     <!-- Title of the option for users who already bought a Signal Login. -->
-    <string name="SignalLoginPaymentScreen__i_have_a_signal_login">مەندە بىر «Signal غا كىرىش» ھوقوقى بار</string>
+    <string name="SignalLoginPaymentScreen__i_have_a_signal_login">مەندە بىر «Signal Login» ھوقوقى بار</string>
     <!-- Subtitle of the existing-login option. -->
     <string name="SignalLoginPaymentScreen__use_your_existing_account_key">ئەسلىدە بار بولغان ھېسابات ئاچقۇچىنى ئىشلىتىڭ</string>
     <!-- Selling point of the existing-login option: the account can be restored. -->
@@ -641,6 +641,16 @@
     <string name="SignalLoginPaymentScreen__continue">داۋاملاشتۇر</string>
     <!-- Error shown when the purchase does not go through. -->
     <string name="SignalLoginPaymentScreen__your_purchase_could_not_be_completed">سېتىۋېلىشىڭىزنى تاماملىغىلى بولمىدى. سىزدىن پۇل تۇتۇلمىدى.</string>
+    <!-- Shown in place of the price when Google Play cannot offer the purchase. -->
+    <string name="SignalLoginPaymentScreen__unavailable">مەۋجۇت ئەمەس</string>
+    <!-- Label for the button that retries loading the purchase price after it failed to load. -->
+    <string name="SignalLoginPaymentScreen__retry">قايتا سىنا</string>
+    <!-- Shown in place of the price when the user already paid for a Signal Login but it was never redeemed. -->
+    <string name="SignalLoginPaymentScreen__already_paid">Already paid</string>
+    <!-- Error shown when Signal Login cannot be purchased on this device, for example because the Google Play Store is unavailable. -->
+    <string name="SignalLoginPaymentScreen__signal_login_cant_be_purchased">Signal Login can\'t be purchased on this device right now. Try again later.</string>
+    <!-- Message shown when the user\'s payment has gone through but has not finished processing yet. -->
+    <string name="SignalLoginPaymentScreen__your_payment_is_still_processing">Your payment is still processing. Come back and tap continue once it goes through, and you won\'t be charged again.</string>
     <!-- Label for the internal-testing text field where a receipt credential can be pasted to skip payment. Not shown to real users. -->
   <!-- Removed by excludeNonTranslatables <string name="SignalLoginPaymentScreen__paste_a_receipt_credential" translatable="false">Paste a receipt credential (testing)</string> -->
     <!-- Error shown when a manually-pasted receipt credential can\'t be parsed or is rejected. Internal testing only. -->
@@ -648,41 +658,81 @@
 
     <!-- Signal Login details screen -->
     <!-- Title of the screen that shows the user their newly purchased Signal Login. -->
-    <string name="SignalLoginInfoScreen__your_signal_login">«Signal غا كىرىش» ھوقوقىڭىز</string>
+    <string name="SignalLoginInfoScreen__your_signal_login">«Signal Login» ھوقوقىڭىز</string>
     <!-- Description warning the user that a lost Signal Login cannot be recovered. -->
-    <string name="SignalLoginInfoScreen__thanks_for_your_purchase">سېتىۋالغىنىڭىزغا رەھمەت. «Signal غا كىرىش» ھوقوقىڭىزنى ئشلىتىپ تىزىملىتىڭ ۋە ھېساباتىڭىزنى ئەسلىگە كەلتۈرۈڭ. ئەگەر ئاچقۇچنى ئۇنتۇپ قالسىڭىز ھېساباتىڭىزنى ئەسلىگە كەلتۈرەلمەيسىز.</string>
+    <string name="SignalLoginInfoScreen__thanks_for_your_purchase">سېتىۋالغىنىڭىزغا رەھمەت. «Signal Login» ھوقوقىڭىزنى ئشلىتىپ تىزىملىتىڭ ۋە ھېساباتىڭىزنى ئەسلىگە كەلتۈرۈڭ. ئەگەر ئاچقۇچنى ئۇنتۇپ قالسىڭىز ھېساباتىڭىزنى ئەسلىگە كەلتۈرەلمەيسىز.</string>
     <!-- Action button that stores the Signal Login in the device password manager. -->
     <string name="SignalLoginInfoScreen__save_to_password_manager">پارول باشقۇرغۇچىغا ساقلاڭ</string>
     <!-- Action button for users who would rather write the Signal Login down themselves. -->
     <string name="SignalLoginInfoScreen__save_manually">قولدا ساقلاش</string>
     <!-- Error shown when the Signal Login could not be stored in the password manager. -->
-    <string name="SignalLoginInfoScreen__your_signal_login_could_not_be_saved">سىزنىڭ « Signalغا كىرىش» ىڭىزنى ساقلىغىلى بولمىدى. ئۇنىڭ ئورنىغا ئۇنى قولدا ساقلاڭ.</string>
+    <string name="SignalLoginInfoScreen__your_signal_login_could_not_be_saved">سىزنىڭ « Signal Login» ىڭىزنى ساقلىغىلى بولمىدى. ئۇنىڭ ئورنىغا ئۇنى قولدا ساقلاڭ.</string>
+    <!-- Title of the dialog shown when the Signal Login could not be found in the password manager after saving it. -->
+    <string name="SignalLoginInfoScreen__error_confirming_login_info">Error confirming login info</string>
+    <!-- Description telling the user that the Signal Login we saved could not be read back out of their password manager. -->
+    <string name="SignalLoginInfoScreen__your_signal_login_could_not_be_confirmed">Your Signal Login could not be confirmed. Make sure you\'ve saved it in your password manager, or save it manually.</string>
+
+    <!-- Sheet that double-checks the user\'s Signal Login really made it into their password manager -->
+    <!-- Title of the sheet asking the user to confirm their Signal Login was saved to their password manager. -->
+    <string name="ConfirmLoginSavedToPasswordManagerBottomSheet__confirm_your_login_info_is_saved">Confirm your login info is saved</string>
+    <!-- Description telling the user they are about to be asked to fill in the Signal Login they just saved. -->
+    <string name="ConfirmLoginSavedToPasswordManagerBottomSheet__confirm_that_your_login_info_was_saved">Confirm that your Signal Login was saved correctly. You will be prompted to fill in your saved password in the next step.</string>
+    <!-- Action button that starts checking the password manager for the Signal Login. -->
+    <string name="ConfirmLoginSavedToPasswordManagerBottomSheet__confirm_login_info">Confirm login info</string>
+    <!-- Action button that sends the user back to their Signal Login. -->
+    <string name="ConfirmLoginSavedToPasswordManagerBottomSheet__see_login_info_again">See login info again</string>
+
+    <!-- Save Signal Login screen -->
+    <!-- Title of the screen that spells out the Signal Login so the user can record it themselves. -->
+    <string name="SignalLoginViewDetailsForManualSaveScreen__save_your_signal_login">Save your Signal Login</string>
+    <!-- Description telling the user to keep their Signal Login somewhere safe and private. -->
+    <string name="SignalLoginViewDetailsForManualSaveScreen__store_your_signal_login_somewhere_safe">Store your Signal Login somewhere safe and secure. Never share your login info with anyone.</string>
+    <!-- Action button that saves the Signal Login to a PDF file. -->
+    <string name="SignalLoginViewDetailsForManualSaveScreen__save_as_pdf">PDF شەكلىدە ساقلاش</string>
+    <!-- Action button for users who are done recording their Signal Login. -->
+    <string name="SignalLoginViewDetailsForManualSaveScreen__continue">داۋاملاشتۇر</string>
+
+    <!-- Sheet that double-checks the user really saved their Signal Login -->
+    <!-- Title of the sheet asking the user to confirm they saved their Signal Login. -->
+    <string name="ConfirmLoginSavedBottomSheet__confirm_your_login_info_is_saved">Confirm your login info is saved</string>
+    <!-- Description warning the user that they are about to be asked for their Signal Login and that it cannot be recovered. -->
+    <string name="ConfirmLoginSavedBottomSheet__you_will_be_prompted_to_sign_in">You will be prompted to sign in with your Signal Login next. Make sure you\'ve saved or copied these details. Signal will not be able to help you recover your account.</string>
+    <!-- Action button confirming the Signal Login is saved. -->
+    <string name="ConfirmLoginSavedBottomSheet__continue">داۋاملاشتۇر</string>
+    <!-- Action button that sends the user back to their Signal Login. -->
+    <string name="ConfirmLoginSavedBottomSheet__show_login_info_again">Show login info again</string>
 
     <!-- Errors shown beneath an account ID text field, wherever one is offered -->
     <!-- Error shown when too many characters were entered in an account ID field. First placeholder is how many were entered, second is the maximum. -->
     <string name="AccountIdField__too_long">بەك ئۇزۇن. %2$d/%1$d ھەرپ-بەلگىلەر.</string>
     <!-- Error shown when the entered account ID contains characters that can\'t appear in one. -->
-    <string name="AccountIdField__invalid_account_id">Invalid account ID</string>
+    <string name="AccountIdField__invalid_account_id">ئىناۋەتسىز ھېسابات كىملىكى</string>
 
     <!-- Signal Login credential entry screen -->
     <!-- Title of the screen where a user with an existing Signal Login types it in to log back in. -->
-    <string name="SignalLoginCredentialEntryScreen__signal_login">Signal غا كىرىش</string>
+    <string name="SignalLoginCredentialEntryScreen__signal_login">Signal Login</string>
     <!-- Description telling the user what to enter to log in. -->
-    <string name="SignalLoginCredentialEntryScreen__enter_your_account_id_followed_by_your_recovery_key">Enter your account ID followed by your recovery key to restore your account.</string>
+    <string name="SignalLoginCredentialEntryScreen__enter_your_account_id_followed_by_your_recovery_key">ھېساباتىڭىزنى ئەسلىگە كەلتۈرۈش ئۈچۈن، ئەسلىگە كەلتۈرۈش ئاچقۇچىنى ئۆز ئىچىگە ئالغان ھېسابات كىملىكىڭىزنى كىرگۈزۈڭ.</string>
     <!-- Label of the text field the account ID is typed into. -->
-    <string name="SignalLoginCredentialEntryScreen__account_id">Account ID</string>
+    <string name="SignalLoginCredentialEntryScreen__account_id">ھېسابات كىملىكى</string>
     <!-- Label of the text field the recovery key is typed into. -->
     <string name="SignalLoginCredentialEntryScreen__recovery_key">ئەسلىگە كەلتۈرۈش ئاچقۇچى</string>
     <!-- Description of the button that spells out the typed recovery key instead of masking it. -->
-    <string name="SignalLoginCredentialEntryScreen__show_recovery_key">Show recovery key</string>
+    <string name="SignalLoginCredentialEntryScreen__show_recovery_key">ئەسلىگە كەلتۈرۈش ئاچقۇچىنى كۆرسىتىش</string>
     <!-- Description of the button that masks the typed recovery key. -->
-    <string name="SignalLoginCredentialEntryScreen__hide_recovery_key">Hide recovery key</string>
+    <string name="SignalLoginCredentialEntryScreen__hide_recovery_key">ئەسلىگە كەلتۈرۈش ئاچقۇچىنى يوشۇرۇش</string>
     <!-- Button that opens a support article for users who can\'t find their Signal Login. -->
     <string name="SignalLoginCredentialEntryScreen__need_help">ياردەم كېرەكمۇ؟</string>
     <!-- Action button that submits the entered Signal Login. -->
     <string name="SignalLoginCredentialEntryScreen__next">كېيىنكى</string>
     <!-- Error shown when the service rejects the entered login, which means one of the two halves is wrong. -->
-    <string name="SignalLoginCredentialEntryScreen__incorrect_account_id_or_recovery_key">Incorrect account ID or recovery key</string>
+    <string name="SignalLoginCredentialEntryScreen__incorrect_account_id_or_recovery_key">ناتوغرا ھېسابات كىملىكى ياكى ئەسلىگە كەلتۈرۈش ئاچقۇچى</string>
+    <!-- Description shown instead when the user is typing back the Signal Login they were just given, to check they recorded it correctly. -->
+    <string name="SignalLoginCredentialEntryScreen__enter_your_signal_login_to_confirm_it_was_recorded_correctly">Enter your Signal Login to confirm it was recorded correctly.</string>
+    <!-- Button that takes the user back to their Signal Login if they can\'t remember what they recorded. -->
+    <string name="SignalLoginCredentialEntryScreen__show_login_info_again">Show login info again</string>
+    <!-- Error shown when what the user typed back doesn\'t match the Signal Login they were given. -->
+    <string name="SignalLoginCredentialEntryScreen__that_doesnt_match_the_signal_login_you_were_shown">That doesn\'t match the Signal Login you were shown</string>
 
     <!-- Add username screen -->
     <!-- Title of the screen offering the user an optional username. -->
@@ -723,12 +773,18 @@
     <string name="AddUsernameScreen__enter_a_minimum_of_d_digits">ئىشلەتكۈچى نامى ئىناۋەتسىز، ئاز دېگەندە %1$d خانە كىرگۈزۈڭ.</string>
     <!-- Validation error shown when the number the user entered after their username has too many digits. -->
     <string name="AddUsernameScreen__enter_a_maximum_of_d_digits">ئىشلەتكۈچى نامى ئىناۋەتسىز، كۆپ دېگەندە %1$d خانە كىرگۈزۈڭ.</string>
-    <!-- Validation error shown when the number the user entered after their username contains something other than digits. -->
-    <string name="AddUsernameScreen__numbers_can_only_contain_digits">Invalid username, numbers can only contain digits.</string>
     <!-- Validation error shown when the number the user entered after their username is 00. -->
     <string name="AddUsernameScreen__this_number_cant_be_00">بۇ نومۇر 00 بولسا بولمايدۇ. 1-9 ئارىسىدىكى نومۇر كىرگۈزۈڭ</string>
     <!-- Validation error shown when the number the user entered after their username has a leading zero. -->
     <string name="AddUsernameScreen__this_number_cant_start_with_0">ئىككى خانىدىن ئارتۇق سانلار 0 بىلەن باشلانسا بولمايدۇ</string>
+    <!-- Title of the dialog confirming the user wants to skip choosing a username. -->
+    <string name="AddUsernameScreen__are_you_sure">جەزملەشتۈرەمسىز؟</string>
+    <!-- Body of the dialog confirming the user wants to skip choosing a username. -->
+    <string name="AddUsernameScreen__without_a_username_people_wont_be_able_to_find_you">Without a username people won\'t be able to find you on Signal.</string>
+    <!-- Button in the skip-username confirmation dialog that returns to the screen without skipping. -->
+    <string name="AddUsernameScreen__cancel">بىكار قىلىش</string>
+    <!-- Button in the skip-username confirmation dialog that skips choosing a username. -->
+    <string name="AddUsernameScreen__continue">داۋاملاشتۇر</string>
 
     <!-- ContactSupportDialog -->
     <!-- Title of the dialog asking the user whether they want to attach a debug log to their support request -->
@@ -744,7 +800,7 @@
     <!-- Title of the two-factor authentication code entry screen -->
     <string name="TotpEntryScreen__two_factor_authentication">ئىككى قاتلىق دەلىللەش</string>
     <!-- Subtitle explaining where to find the code -->
-    <string name="TotpEntryScreen__to_continue_enter_the_code">To continue enter the 6-digit code from your authenticator app.</string>
+    <string name="TotpEntryScreen__to_continue_enter_the_code">To continue, enter the 6-digit code from your authenticator app.</string>
     <!-- Button text to cancel entering a code -->
     <string name="TotpEntryScreen__cancel">بىكار قىلىش</string>
 
@@ -752,15 +808,15 @@
     <!-- Title of the two-factor authentication method selection screen -->
     <string name="TwoFactorSelectionScreen__two_factor_authentication">ئىككى قاتلىق دەلىللەش</string>
     <!-- Subtitle telling the user to pick one of the methods listed below -->
-    <string name="TwoFactorSelectionScreen__choose_a_method_below">Choose a method below to verify your account.</string>
+    <string name="TwoFactorSelectionScreen__choose_a_method_below">ھېساباتىڭىزنى دەلىللەش ئۈچۈن تۆۋەندىكىلەردىن بىر مېتودنى تاللاڭ.</string>
     <!-- Title of the card for verifying with a passkey -->
-    <string name="TwoFactorSelectionScreen__passkey">Passkey</string>
+    <string name="TwoFactorSelectionScreen__passkey">كىرىش ئاچقۇچى</string>
     <!-- Description of the card for verifying with a passkey -->
-    <string name="TwoFactorSelectionScreen__tap_to_use_your_device_biometrics">Tap to use your device biometrics or FIDO2 passkey</string>
+    <string name="TwoFactorSelectionScreen__tap_to_use_your_device_biometrics">ئۈسكۈنىڭىزنىڭ بىئومېتىرىكلىرى ياكى FIDO2 كىرىش ئاچقۇچىنى چېكىش ئارقىلىق ئىشلىتىڭ</string>
     <!-- Title of the card for verifying with a code from an authenticator app -->
     <string name="TwoFactorSelectionScreen__authenticator_app">دەلىللىگۈچى ئەپ</string>
     <!-- Description of the card for verifying with a code from an authenticator app -->
-    <string name="TwoFactorSelectionScreen__enter_a_one_time_code">Enter a one-time code generated by your authenticator app.</string>
+    <string name="TwoFactorSelectionScreen__enter_a_one_time_code">دەلىللىگۈچى ئەپىڭىز ھاسىل قىلغان، بىرلا قېتىم ئىشلىتىلىدىغان كودنى كىرگۈزۈڭ.</string>
     <!-- Button text to cancel two-factor authentication -->
     <string name="TwoFactorSelectionScreen__cancel">بىكار قىلىش</string>
 </resources>

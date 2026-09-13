@@ -81,13 +81,13 @@ import org.signal.registration.screens.shared.AccountIdVisualTransformation
 import org.signal.registration.screens.shared.BackTopAppBar
 import org.signal.registration.screens.shared.accountIdTextStyle
 import org.signal.registration.test.TestTags
-
-/** How the recovery key is grouped when it is spelled out rather than masked. */
-private const val RECOVERY_KEY_CHUNK_LENGTH = 4
+import org.signal.signallogin.RecoveryKeyGroups
+import org.signal.signallogin.beta.SignalLoginBetaTag
 
 /**
- * Collects an existing Signal Login -- the account ID and the recovery key that pairs with it -- and logs the user
- * back in with the two together.
+ * Collects a Signal Login -- the account ID and the recovery key that pairs with it. What happens with the pair depends
+ * on [SignalLoginCredentialEntryState.mode] and the view model behind it: it either logs an existing user back in, or
+ * checks a brand new login against the one the user was just shown.
  */
 @Composable
 fun SignalLoginCredentialEntryScreen(
@@ -151,7 +151,7 @@ private fun OnePaneLayout(
           .verticalScroll(scrollState)
           .padding(paddingValues)
       ) {
-        Header()
+        Header(mode = state.mode)
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -186,7 +186,7 @@ private fun TwoPaneLayout(
           .verticalScroll(firstPaneScrollState)
           .padding(paddingValues)
       ) {
-        Header(twoPane = true)
+        Header(mode = state.mode, twoPane = true)
       }
     },
     secondPane = { paddingValues ->
@@ -207,28 +207,41 @@ private fun TwoPaneLayout(
 }
 
 @Composable
-private fun Header(twoPane: Boolean = false) {
+private fun Header(mode: SignalLoginCredentialEntryState.Mode, twoPane: Boolean = false) {
+  val subtitle = when (mode) {
+    SignalLoginCredentialEntryState.Mode.Login -> stringResource(R.string.SignalLoginCredentialEntryScreen__enter_your_account_id_followed_by_your_recovery_key)
+    SignalLoginCredentialEntryState.Mode.ConfirmSaved -> stringResource(R.string.SignalLoginCredentialEntryScreen__enter_your_signal_login_to_confirm_it_was_recorded_correctly)
+  }
+
   Image(
     painter = painterResource(R.drawable.image_signal_login_ring),
     contentDescription = null,
-    modifier = Modifier.size(64.dp)
+    modifier = Modifier.size(72.dp)
   )
 
   Spacer(modifier = Modifier.height(20.dp))
 
-  Text(
-    text = stringResource(R.string.SignalLoginCredentialEntryScreen__signal_login),
-    style = if (twoPane) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineMedium,
-    textAlign = TextAlign.Center,
-    modifier = Modifier
-      .fillMaxWidth()
-      .attachDebugLogHelper()
-  )
+  Row(
+    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+    verticalAlignment = Alignment.CenterVertically,
+    modifier = Modifier.fillMaxWidth()
+  ) {
+    Text(
+      text = stringResource(R.string.SignalLoginCredentialEntryScreen__signal_login),
+      style = if (twoPane) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.headlineMedium,
+      textAlign = TextAlign.Center,
+      modifier = Modifier
+        .weight(1f, fill = false)
+        .attachDebugLogHelper()
+    )
+
+    SignalLoginBetaTag()
+  }
 
   Spacer(modifier = Modifier.height(12.dp))
 
   Text(
-    text = stringResource(R.string.SignalLoginCredentialEntryScreen__enter_your_account_id_followed_by_your_recovery_key),
+    text = subtitle,
     style = if (twoPane) MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal) else MaterialTheme.typography.bodyLarge,
     color = MaterialTheme.colorScheme.onSurfaceVariant,
     textAlign = TextAlign.Center,
@@ -252,8 +265,8 @@ private fun CredentialTextFields(
 
 /**
  * Builds a modifier that prompts the password manager the first time either credential field is tapped, so a saved
- * login can fill both halves at once. Only fires while the fields are still empty, and only once per screen so a
- * dismissed prompt doesn't keep coming back.
+ * login can fill both halves at once. Only fires while the user hasn't filled anything in themselves, and only once
+ * per screen so a dismissed prompt doesn't keep coming back.
  */
 @Composable
 private fun passwordManagerPromptOnFocus(
@@ -265,8 +278,7 @@ private fun passwordManagerPromptOnFocus(
   var hasPrompted by rememberSaveable { mutableStateOf(false) }
 
   return Modifier.onFocusChanged { focusState ->
-    val fieldsAreEmpty = state.accountId.isEmpty() && state.recoveryKey.enteredText.isEmpty()
-    if (focusState.isFocused && !hasPrompted && fieldsAreEmpty && SignalCredentialManager.isSupported(context)) {
+    if (focusState.isFocused && !hasPrompted && state.canPromptPasswordManager && SignalCredentialManager.isSupported(context)) {
       hasPrompted = true
       coroutineScope.launch {
         val credential = SignalCredentialManager.getCredential(context)
@@ -323,7 +335,7 @@ private fun RecoveryKeyTextField(
   val autoFillHelper = passwordAutoFillHelper { onEvent(SignalLoginCredentialEntryScreenEvents.RecoveryKeyChanged(it)) }
   val revealed = state.isRecoveryKeyRevealed
   val visualTransformation = remember(revealed) {
-    if (revealed) AepVisualTransformation(RECOVERY_KEY_CHUNK_LENGTH) else PasswordVisualTransformation()
+    if (revealed) AepVisualTransformation(RecoveryKeyGroups.GROUP_SIZE) else PasswordVisualTransformation()
   }
 
   TextField(
@@ -362,6 +374,7 @@ private fun RecoveryKeyTextField(
     supportingText = {
       val error = state.recoveryKey.error
       when {
+        state.areCredentialsIncorrect && state.mode == SignalLoginCredentialEntryState.Mode.ConfirmSaved -> Text(stringResource(R.string.SignalLoginCredentialEntryScreen__that_doesnt_match_the_signal_login_you_were_shown))
         state.areCredentialsIncorrect -> Text(stringResource(R.string.SignalLoginCredentialEntryScreen__incorrect_account_id_or_recovery_key))
         error is AepValidationError.TooLong -> Text(stringResource(R.string.EnterAepScreen__too_long, error.count, error.max))
         error != null -> Text(stringResource(R.string.EnterAepScreen__invalid_recovery_key))
@@ -410,7 +423,10 @@ private fun Footer(
         contentAlignment = Alignment.CenterStart,
         modifier = Modifier.weight(1f)
       ) {
-        NeedHelpButton(onEvent)
+        when (state.mode) {
+          SignalLoginCredentialEntryState.Mode.Login -> NeedHelpButton(onEvent)
+          SignalLoginCredentialEntryState.Mode.ConfirmSaved -> ShowLoginInfoAgainButton(onEvent)
+        }
       }
 
       Box(
@@ -431,6 +447,17 @@ private fun NeedHelpButton(onEvent: (SignalLoginCredentialEntryScreenEvents) -> 
     modifier = Modifier.testTag(TestTags.SIGNAL_LOGIN_CREDENTIAL_NEED_HELP_BUTTON)
   ) {
     Text(text = stringResource(R.string.SignalLoginCredentialEntryScreen__need_help))
+  }
+}
+
+@Composable
+private fun ShowLoginInfoAgainButton(onEvent: (SignalLoginCredentialEntryScreenEvents) -> Unit) {
+  TextButton(
+    shape = RoundedCornerShape(0.dp),
+    onClick = { onEvent(SignalLoginCredentialEntryScreenEvents.ShowLoginInfoAgainClicked) },
+    modifier = Modifier.testTag(TestTags.SIGNAL_LOGIN_CREDENTIAL_SHOW_LOGIN_INFO_AGAIN_BUTTON)
+  ) {
+    Text(text = stringResource(R.string.SignalLoginCredentialEntryScreen__show_login_info_again))
   }
 }
 
@@ -488,6 +515,17 @@ private fun SignalLoginCredentialEntryScreenRevealedPreview() {
         recoveryKey = AepInput.from("uy38jh2778hjjhj8lk19ga61s672jsj089r023s6a57809bap92j2yh5t326vv7t"),
         isRecoveryKeyRevealed = true
       ),
+      onEvent = {}
+    )
+  }
+}
+
+@AllDevicePreviews
+@Composable
+private fun SignalLoginCredentialEntryScreenConfirmSavedPreview() {
+  Previews.Preview {
+    SignalLoginCredentialEntryScreen(
+      state = SignalLoginCredentialEntryState(mode = SignalLoginCredentialEntryState.Mode.ConfirmSaved),
       onEvent = {}
     )
   }

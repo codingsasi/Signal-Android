@@ -17,14 +17,20 @@ import kotlinx.coroutines.launch
 import org.signal.core.ui.compose.CollectActions
 import org.signal.core.ui.compose.ComposeFragment
 import org.signal.core.util.Result
+import org.signal.core.util.Util
 import org.signal.passwordmanager.SignalCredentialManager
 import org.signal.signallogin.pdf.SignalLoginPdfRenderer
 import org.signal.signallogin.viewdetails.SignalLoginViewDetailsScreen
+import org.thoughtcrime.securesms.components.TemporaryScreenshotSecurity
 
 /**
  * Shows the account and recovery keys that make up the user's Signal Login, the same way registration does.
  */
 class SignalLoginViewDetailsFragment : ComposeFragment() {
+
+  companion object {
+    private const val CLIPBOARD_TIMEOUT_SECONDS = 60
+  }
 
   private val viewModel: SignalLoginViewDetailsViewModel by viewModels()
 
@@ -32,7 +38,7 @@ class SignalLoginViewDetailsFragment : ComposeFragment() {
     if (uri != null) {
       val context = requireContext().applicationContext
       lifecycleScope.launch {
-        val result = SignalLoginPdfRenderer.renderTo(context, uri, viewModel.state.value)
+        val result = SignalLoginPdfRenderer.renderTo(context, uri, viewModel.state.value.accountKey, viewModel.state.value.recoveryKeyGroups)
         if (result is Result.Failure) {
           Toast.makeText(context, result.failure.userMessageRes, Toast.LENGTH_LONG).show()
         }
@@ -43,6 +49,8 @@ class SignalLoginViewDetailsFragment : ComposeFragment() {
   @Composable
   override fun FragmentContent() {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    TemporaryScreenshotSecurity.bind()
 
     CollectActions(viewModel.actions) { action -> handleAction(action) }
 
@@ -65,6 +73,7 @@ class SignalLoginViewDetailsFragment : ComposeFragment() {
         }
       }
       SignalLoginViewDetailsAction.LaunchSaveAsPdf -> savePdfLauncher.launch(SignalLoginPdfRenderer.suggestedFileName(requireContext()))
+      is SignalLoginViewDetailsAction.CopyTextToClipboard -> Util.copyToClipboard(requireContext(), action.text, CLIPBOARD_TIMEOUT_SECONDS)
     }
   }
 }

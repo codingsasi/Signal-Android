@@ -439,7 +439,7 @@ class AppRegistrationStorageController(private val context: Context) : StorageCo
         val selfPni = SignalStore.account.pni
         val selfE164 = SignalStore.account.e164
 
-        if (selfAci == null || selfPni == null || selfE164 == null) {
+        if (selfAci == null) {
           trySend(LocalBackupRestoreProgress.Error(IllegalStateException("Account not registered, cannot restore V2 backup")))
           return@launch
         }
@@ -890,7 +890,7 @@ class AppRegistrationStorageController(private val context: Context) : StorageCo
 
       val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
       context.contentResolver.takePersistableUriPermission(rootUri, takeFlags)
-      SignalStore.settings.setSignalBackupDirectory(rootUri)
+      SignalStore.settings.signalBackupDirectory = rootUri
 
       if (BackupUtil.canUserAccessBackupDirectory(context)) {
         LocalBackupListener.setNextBackupTimeToIntervalFromNow(context)

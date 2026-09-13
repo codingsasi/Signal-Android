@@ -5,6 +5,7 @@
 
 package org.signal.registration.screens.signallogincredentials
 
+import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
@@ -93,6 +94,41 @@ class SignalLoginCredentialEntryViewModelTest {
     val prefilled = SignalLoginCredentialEntryViewModel(repository = mockRepository, parentEventEmitter = parentEventEmitter, prefilledAccountId = VALID_ACCOUNT_ID)
 
     assertThat(prefilled.state.value.accountId).isEqualTo(VALID_ACCOUNT_ID)
+  }
+
+  @Test
+  fun `a prefilled account ID does not count as user input, so the password manager can still be offered`() = runTest(testDispatcher) {
+    val prefilled = SignalLoginCredentialEntryViewModel(repository = mockRepository, parentEventEmitter = parentEventEmitter, prefilledAccountId = VALID_ACCOUNT_ID)
+
+    assertThat(prefilled.state.value.isAccountIdPrefilled).isTrue()
+    assertThat(prefilled.state.value.canPromptPasswordManager).isTrue()
+  }
+
+  @Test
+  fun `without a prefilled account ID the screen starts empty and the password manager can be offered`() = runTest(testDispatcher) {
+    assertThat(viewModel.state.value.isAccountIdPrefilled).isFalse()
+    assertThat(viewModel.state.value.canPromptPasswordManager).isTrue()
+  }
+
+  @Test
+  fun `an account ID the user typed themselves stops the password manager from being offered`() = runTest(testDispatcher) {
+    applyEvent(
+      SignalLoginCredentialEntryState(accountId = VALID_ACCOUNT_ID, isAccountIdPrefilled = true),
+      SignalLoginCredentialEntryScreenEvents.AccountIdChanged("a6b28482")
+    )
+
+    assertThat(emittedStates.last().isAccountIdPrefilled).isFalse()
+    assertThat(emittedStates.last().canPromptPasswordManager).isFalse()
+  }
+
+  @Test
+  fun `an entered recovery key stops the password manager from being offered`() = runTest(testDispatcher) {
+    applyEvent(
+      SignalLoginCredentialEntryState(accountId = VALID_ACCOUNT_ID, isAccountIdPrefilled = true),
+      SignalLoginCredentialEntryScreenEvents.RecoveryKeyChanged("uy38")
+    )
+
+    assertThat(emittedStates.last().canPromptPasswordManager).isFalse()
   }
 
   @Test
@@ -189,6 +225,19 @@ class SignalLoginCredentialEntryViewModelTest {
     assertThat(emittedParentEvents).isEmpty()
     assertThat(emittedStates.last().isNextEnabled).isFalse()
     coVerify(exactly = 0) { mockRepository.reRegisterAccountWithoutPhoneNumber(any(), any(), any(), any(), any()) }
+  }
+
+  @Test
+  fun `PasswordManagerCredentialSelected keeps a prefilled account ID when the credential has no username`() = runTest(testDispatcher) {
+    stubSuccessfulLogin(AccountEntropyPool(VALID_AEP))
+
+    applyEvent(
+      SignalLoginCredentialEntryState(accountId = VALID_ACCOUNT_ID, isAccountIdPrefilled = true),
+      SignalLoginCredentialEntryScreenEvents.PasswordManagerCredentialSelected(accountId = "", recoveryKey = VALID_AEP)
+    )
+
+    assertThat(emittedStates.first().accountId).isEqualTo(VALID_ACCOUNT_ID)
+    coVerify { mockRepository.reRegisterAccountWithoutPhoneNumber(any(), any(), any(), any(), any()) }
   }
 
   @Test
@@ -363,18 +412,13 @@ class SignalLoginCredentialEntryViewModelTest {
   }
 
   @Test
-  fun `NextClicked still registration locked after providing the reglock token falls back to PIN entry`() = runTest(testDispatcher) {
+  fun `NextClicked still registration locked after providing the reglock token throws, since there is nothing to fall back to`() = runTest(testDispatcher) {
     coEvery { mockRepository.reRegisterAccountWithoutPhoneNumber(any(), any(), any(), any(), any()) } returns
       RequestResult.NonSuccess(RegisterAccountError.RegistrationLock(registrationLockResponse()))
 
-    applyEvent(completeState(), SignalLoginCredentialEntryScreenEvents.NextClicked)
-
-    assertThat(emittedStates.last().isLoggingIn).isEqualTo(false)
-    assertThat(emittedParentEvents).hasSize(2)
-    assertThat(emittedParentEvents[1])
-      .isInstanceOf<RegistrationFlowEvent.NavigateToScreen>()
-      .prop(RegistrationFlowEvent.NavigateToScreen::route)
-      .isInstanceOf<RegistrationRoute.PinEntryForRegistrationLock>()
+    assertFailure {
+      applyEvent(completeState(), SignalLoginCredentialEntryScreenEvents.NextClicked)
+    }.isInstanceOf<IllegalStateException>()
   }
 
   @Test
@@ -449,6 +493,24 @@ class SignalLoginCredentialEntryViewModelTest {
         totp = 123456
       )
     }
+  }
+
+  @Test
+  fun `TwoFactorCodeEntered for a screen whose recovery key is gone does not attempt a login`() = runTest(testDispatcher) {
+    val state = SignalLoginCredentialEntryState(accountId = VALID_ACCOUNT_ID)
+
+    applyEvent(state, SignalLoginCredentialEntryScreenEvents.TwoFactorCodeEntered("123456"))
+
+    assertThat(emittedStates).isEmpty()
+    assertThat(emittedParentEvents).isEmpty()
+    coVerify(exactly = 0) { mockRepository.reRegisterAccountWithoutPhoneNumber(any(), any(), any(), any(), any(), any()) }
+  }
+
+  @Test
+  fun `TwoFactorCodeEntered while the login is already in flight does not attempt a second login`() = runTest(testDispatcher) {
+    applyEvent(completeState().copy(isLoggingIn = true), SignalLoginCredentialEntryScreenEvents.TwoFactorCodeEntered("123456"))
+
+    coVerify(exactly = 0) { mockRepository.reRegisterAccountWithoutPhoneNumber(any(), any(), any(), any(), any(), any()) }
   }
 
   @Test(expected = IllegalStateException::class)

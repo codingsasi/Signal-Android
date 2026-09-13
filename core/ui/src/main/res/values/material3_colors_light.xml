@@ -7,6 +7,7 @@
     <color name="signal_light_colorSurface">#FDFBFF</color>
     <color name="signal_light_colorSurfaceVariant">#EDE7F3</color>
     <color name="signal_light_colorBackground">#FDFBFF</color>
+    <color name="signal_light_colorSurfaceVariantFill">#CCFFFFFF</color>
     <color name="signal_light_colorError">#BA1B1B</color>
     <color name="signal_light_colorErrorContainer">#FFDAD4</color>
     <color name="signal_light_colorOnPrimary">#FFFFFF</color>
@@ -19,6 +20,7 @@
     <color name="signal_light_colorOnBackground">#1C1A1E</color>
     <color name="signal_light_colorOutline">#808389</color>
     <color name="signal_light_neutralSurface">#99FFFFFF</color>
+    <color name="signal_light_neutralFill">#1A000000</color>
     <color name="signal_light_colorOnCustom">#FFFFFF</color>
     <color name="signal_light_colorOnCustomVariant">#B3FFFFFF</color>
 

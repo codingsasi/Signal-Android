@@ -42,7 +42,6 @@ import org.thoughtcrime.securesms.calls.quality.CallQualityBottomSheetFragment
 import org.thoughtcrime.securesms.components.settings.DSLConfiguration
 import org.thoughtcrime.securesms.components.settings.DSLSettingsFragment
 import org.thoughtcrime.securesms.components.settings.DSLSettingsText
-import org.thoughtcrime.securesms.components.settings.app.notifications.ReminderType
 import org.thoughtcrime.securesms.components.settings.app.privacy.advanced.AdvancedPrivacySettingsRepository
 import org.thoughtcrime.securesms.components.settings.app.subscription.InAppPaymentsRepository
 import org.thoughtcrime.securesms.components.settings.configure
@@ -78,6 +77,7 @@ import org.thoughtcrime.securesms.payments.DataExportUtil
 import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.recipients.RecipientId
 import org.thoughtcrime.securesms.registration.data.QuickstartCredentialExporter
+import org.thoughtcrime.securesms.ringrtc.CameraFpsRanges
 import org.thoughtcrime.securesms.storage.StorageSyncHelper
 import org.thoughtcrime.securesms.util.ConversationUtil
 import org.thoughtcrime.securesms.util.TextSecurePreferences
@@ -100,6 +100,8 @@ class InternalSettingsFragment : DSLSettingsFragment(R.string.preferences__inter
 
   private lateinit var viewModel: InternalSettingsViewModel
   private var searchMenuItem: MenuItem? = null
+
+  private val cameraFpsRangeDescription: String? by lazy { CameraFpsRanges.captureCameraRangesDescription(requireContext()) }
 
   private var scrollToPosition: Int = 0
   private val layoutManager: LinearLayoutManager?
@@ -440,8 +442,7 @@ class InternalSettingsFragment : DSLSettingsFragment(R.string.preferences__inter
         title = DSLSettingsText.from("Run unread reminder job"),
         summary = DSLSettingsText.from("Generates an unread reminder notification based on unreads and muted preferences. Skips the three day cooldown."),
         onClick = {
-          val threadIds = (SignalDatabase.threads.getMutedThreadIds(ReminderType.MESSAGES, 0) + SignalDatabase.threads.getMutedThreadIds(ReminderType.CALLS, 0)).distinct()
-          threadIds.forEach { threadId -> UnreadReminderJob.enqueue(threadId, 0) }
+          SignalDatabase.threads.getMutedThreadIds(0).forEach { threadId -> UnreadReminderJob.enqueue(threadId, 0) }
         }
       )
 
@@ -834,6 +835,25 @@ class InternalSettingsFragment : DSLSettingsFragment(R.string.preferences__inter
             initialValue = state.callingStatsIntervalSecs.takeIf { it > 0 }
           ) { intervalSecs ->
             viewModel.setInternalCallingStatsIntervalSecs(intervalSecs ?: 0)
+          }
+        }
+      )
+
+      clickPref(
+        title = DSLSettingsText.from("Minimum Capture FPS"),
+        summary = DSLSettingsText.from(
+          buildString {
+            append(if (state.callingMinimumCaptureFps > 0) "${state.callingMinimumCaptureFps} fps" else "Default")
+            cameraFpsRangeDescription?.let { append("\n$it") }
+          }
+        ),
+        onClick = {
+          promptUserForInt(
+            title = "Minimum Capture FPS",
+            message = "Floor for the camera's capture framerate range. 0 for default logic. Applies on next call start.",
+            initialValue = state.callingMinimumCaptureFps.takeIf { it > 0 }
+          ) { minimumFps ->
+            viewModel.setInternalCallingMinimumCaptureFps(minimumFps ?: 0)
           }
         }
       )
