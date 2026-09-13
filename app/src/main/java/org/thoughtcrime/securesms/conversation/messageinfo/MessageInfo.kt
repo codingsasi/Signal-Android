@@ -24,152 +24,169 @@ data class InfoRow(val label: String, val value: String)
 data class InfoSection(val title: String, val rows: List<InfoRow>)
 
 /**
- * Collects everything this client actually knows about a single message.
+ * Collects what this client actually knows about a single message.
  *
- * Note on what is deliberately absent: nothing here describes the sender's network, carrier, battery,
- * IP address, app version, or location. Signal does not transmit any of that, and with sealed sender the
- * service itself usually cannot tell who sent a message, so there is no such data to surface.
+ * Every row here is omitted rather than shown empty. A field that is absent, zero, off, or false is simply
+ * not listed, so the sheet only ever contains facts. Sections with nothing left in them disappear too.
+ *
+ * Note on what is permanently absent: nothing describes the sender's network, carrier, battery, IP address,
+ * app version, or location, and there is no record of when you last viewed a message. Signal neither
+ * transmits nor stores any of that, so none of it can appear here.
  */
 object MessageInfo {
 
-  private const val NOT_SET = "Not set"
-
   @WorkerThread
   fun collect(context: Context, record: MessageRecord): List<InfoSection> {
-    val sections = mutableListOf<InfoSection>()
-
-    sections += timing(record)
-    sections += origin(context, record)
-    sections += state(record)
-    content(record)?.let { sections += it }
-    attachments(record).forEach { sections += it }
-    reactions(context, record)?.let { sections += it }
-    edits(record)?.let { sections += it }
-    retraction(record)?.let { sections += it }
-
-    return sections
+    return listOfNotNull(
+      timing(record),
+      origin(context, record),
+      state(record),
+      content(record),
+      reactions(context, record),
+      edits(record),
+      retraction(record)
+    ) + attachments(record)
   }
 
-  private fun timing(record: MessageRecord): InfoSection {
-    val rows = mutableListOf<InfoRow>()
-    rows += InfoRow("Sent by their device", formatTime(record.dateSent))
-    rows += InfoRow("Received by server", formatTime(record.serverTimestamp))
-    rows += InfoRow("Arrived on this phone", formatTime(record.dateReceived))
+  // region Builders that drop anything without a value
 
-    // The three clocks come from three different machines, so the gaps are the only latency signal available.
-    if (record.serverTimestamp > 0) {
-      rows += InfoRow("Their clock vs server", formatOffset(record.dateSent - record.serverTimestamp))
-      rows += InfoRow("Server to this phone", formatDuration(record.dateReceived - record.serverTimestamp))
-    }
-
-    if (record.notifiedTimestamp > 0) {
-      rows += InfoRow("You were notified", formatTime(record.notifiedTimestamp))
-    }
-
-    return InfoSection("Timing", rows)
+  /** Builds a section, keeping only rows that carry real data, and returns null if none do. */
+  private fun section(title: String, build: RowBuilder.() -> Unit): InfoSection? {
+    val builder = RowBuilder().apply(build)
+    return if (builder.rows.isEmpty()) null else InfoSection(title, builder.rows)
   }
 
-  private fun origin(context: Context, record: MessageRecord): InfoSection {
+  private class RowBuilder {
     val rows = mutableListOf<InfoRow>()
-    rows += InfoRow("From", record.fromRecipient.getDisplayName(context))
-    rows += InfoRow("Their device", describeDevice(record.fromDeviceId))
-    rows += InfoRow("Sealed sender", if (record.isUnidentified) "Yes, server could not see the sender" else "No")
-    rows += InfoRow("End-to-end encrypted", if (record.isSecure || record.isPush) "Yes" else "No")
-    rows += InfoRow("Safety number issue", if (record.isIdentityMismatchFailure) "Yes" else "None")
-    return InfoSection("Origin", rows)
+
+    /** Adds a row only when the value is meaningful. */
+    fun add(label: String, value: String?) {
+      if (!value.isNullOrBlank()) {
+        rows += InfoRow(label, value)
+      }
+    }
+
+    /** Adds a timestamp row only when the timestamp is actually set. */
+    fun time(label: String, millis: Long) {
+      if (millis > 0) {
+        rows += InfoRow(label, formatTime(millis))
+      }
+    }
+
+    /** Adds a flag row only when the flag is true, since a list of "No" tells you nothing. */
+    fun flag(label: String, condition: Boolean, value: String = "Yes") {
+      if (condition) {
+        rows += InfoRow(label, value)
+      }
+    }
   }
 
-  private fun state(record: MessageRecord): InfoSection {
-    val rows = mutableListOf<InfoRow>()
-    // Read state is only tracked on the MMS-backed record, which is what every modern message is.
-    (record as? MmsMessageRecord)?.let { rows += InfoRow("Read by you", if (it.isRead) "Yes" else "No") }
-    rows += InfoRow("Disappearing timer", if (record.expiresIn > 0) formatDuration(record.expiresIn) else "Off")
-    if (record.expireStarted > 0) {
-      rows += InfoRow("Disappears at", formatTime(record.expireStarted + record.expiresIn))
+  // endregion
+
+  private fun timing(record: MessageRecord): InfoSection? = section("Timing") {
+    time("Sent by their device", record.dateSent)
+    time("Received by server", record.serverTimestamp)
+    time("Arrived on this phone", record.dateReceived)
+
+    // The three clocks come from three different machines, so the gaps are the only latency signal there is.
+    if (record.serverTimestamp > 0 && record.dateSent > 0) {
+      add("Their clock vs server", formatOffset(record.dateSent - record.serverTimestamp))
     }
-    rows += InfoRow("View once", if (record.isViewOnce) "Yes" else "No")
-    rows += InfoRow("Starred", if (record.isStarred) "Yes" else "No")
-    if (record.isRemoteDelete) {
-      rows += InfoRow("Deleted", "Yes, content is gone")
+    if (record.serverTimestamp > 0 && record.dateReceived > record.serverTimestamp) {
+      add("Server to this phone", formatDuration(record.dateReceived - record.serverTimestamp))
     }
-    return InfoSection("State", rows)
+    time("You were notified", record.notifiedTimestamp)
+
+    // Only meaningful for messages they sent us, and only recorded for messages seen since this was added.
+    if (!record.isOutgoing) {
+      time("First seen by you", SignalDatabase.messageViews.firstViewedAt(record.id))
+    }
   }
 
-  private fun content(record: MessageRecord): InfoSection? {
-    val rows = mutableListOf<InfoRow>()
-    val body = record.body
+  private fun origin(context: Context, record: MessageRecord): InfoSection? = section("Origin") {
+    add("From", record.fromRecipient.getDisplayName(context))
+    add("Their device", describeDevice(record.fromDeviceId))
+    flag("Sealed sender", record.isUnidentified, "Yes, the server could not see the sender")
+    flag("Safety number issue", record.isIdentityMismatchFailure)
+  }
 
-    rows += InfoRow("Characters", body.length.toString())
-    rows += InfoRow("Words", if (body.isBlank()) "0" else body.trim().split(Regex("\\s+")).size.toString())
+  private fun state(record: MessageRecord): InfoSection? = section("State") {
+    val mms = record as? MmsMessageRecord
+    if (mms != null) {
+      add("Read by you", if (mms.isRead) "Yes" else "Not yet")
+    }
+    if (record.expiresIn > 0) {
+      add("Disappearing timer", formatDuration(record.expiresIn))
+      if (record.expireStarted > 0) {
+        time("Disappears at", record.expireStarted + record.expiresIn)
+      }
+    }
+    flag("View once", record.isViewOnce)
+    flag("Starred", record.isStarred)
+    flag("Deleted", record.isRemoteDelete, "Yes, the content is gone")
+  }
+
+  private fun content(record: MessageRecord): InfoSection? = section("Content") {
+    val body = record.body.trim()
+    val mms = record as? MmsMessageRecord
+
+    if (body.isNotEmpty()) {
+      add("Characters", body.length.toString())
+      add("Words", body.split(Regex("\\s+")).size.toString())
+    }
 
     val styles = record.messageRanges?.ranges.orEmpty().mapNotNull { it.style?.name }
     if (styles.isNotEmpty()) {
-      rows += InfoRow("Formatting", styles.joinToString(", ") { it.lowercase(Locale.US) })
+      add("Formatting", styles.joinToString(", ") { it.lowercase(Locale.US) })
     }
 
-    val mms = record as? MmsMessageRecord
-    if (mms?.quote != null) {
-      rows += InfoRow("Replying to", "Yes")
+    flag("Replying to another message", mms?.quote != null)
+    add("Link preview", mms?.linkPreviews?.firstOrNull()?.url)
+    if ((mms?.sharedContacts?.size ?: 0) > 0) {
+      add("Shared contacts", mms!!.sharedContacts.size.toString())
     }
-    if (mms?.linkPreviews?.isNotEmpty() == true) {
-      rows += InfoRow("Link preview", mms.linkPreviews.first().url)
-    }
-    if (mms?.sharedContacts?.isNotEmpty() == true) {
-      rows += InfoRow("Shared contacts", mms.sharedContacts.size.toString())
-    }
-    if (mms?.hasSelfMention() == true) {
-      rows += InfoRow("Mentions you", "Yes")
-    }
-
-    return if (rows.isEmpty()) null else InfoSection("Content", rows)
+    flag("Mentions you", mms?.hasSelfMention() == true)
   }
 
   private fun attachments(record: MessageRecord): List<InfoSection> {
     val slides: List<Slide> = (record as? MmsMessageRecord)?.slideDeck?.slides ?: return emptyList()
 
-    return slides.mapIndexed { index, slide ->
-      val rows = mutableListOf<InfoRow>()
-      rows += InfoRow("Type", slide.contentType)
-      rows += InfoRow("Size", formatBytes(slide.fileSize))
-      slide.fileName.orElse(null)?.let { rows += InfoRow("Filename", it) }
-      if (slide.asAttachment().width > 0) {
-        rows += InfoRow("Dimensions", "${slide.asAttachment().width} x ${slide.asAttachment().height}")
-      }
-      slide.caption.orElse(null)?.let { rows += InfoRow("Caption", it) }
-      rows += InfoRow("Looping GIF", if (slide.isVideoGif) "Yes" else "No")
-      rows += InfoRow("Voice note", if (slide.asAttachment().voiceNote) "Yes" else "No")
-      rows += InfoRow("Borderless", if (slide.isBorderless) "Yes" else "No")
-      slide.asAttachment().blurHash?.hash?.let { rows += InfoRow("Blur hash", it) }
-      rows += InfoRow("Transfer state", describeTransfer(slide.transferState))
-
+    return slides.mapIndexedNotNull { index, slide ->
+      val attachment = slide.asAttachment()
       val title = if (slides.size == 1) "Attachment" else "Attachment ${index + 1}"
-      InfoSection(title, rows)
+
+      section(title) {
+        add("Type", slide.contentType)
+        if (slide.fileSize > 0) {
+          add("Size", formatBytes(slide.fileSize))
+        }
+        add("Filename", slide.fileName.orElse(null))
+        if (attachment.width > 0 && attachment.height > 0) {
+          add("Dimensions", "${attachment.width} x ${attachment.height}")
+        }
+        add("Caption", slide.caption.orElse(null))
+        flag("Looping GIF", slide.isVideoGif)
+        flag("Voice note", attachment.voiceNote)
+        flag("Borderless", slide.isBorderless)
+        add("Transfer state", describeTransfer(slide.transferState))
+      }
     }
   }
 
-  private fun reactions(context: Context, record: MessageRecord): InfoSection? {
-    val reactions = record.reactions
-    if (reactions.isEmpty()) {
-      return null
+  private fun reactions(context: Context, record: MessageRecord): InfoSection? = section("Reactions") {
+    record.reactions.forEach { reaction ->
+      add(reaction.emoji, "${Recipient.resolved(reaction.author).getDisplayName(context)} at ${formatTime(reaction.dateReceived)}")
     }
-    return InfoSection(
-      "Reactions",
-      reactions.map { reaction ->
-        val who = Recipient.resolved(reaction.author).getDisplayName(context)
-        InfoRow(reaction.emoji, "$who at ${formatTime(reaction.dateReceived)}")
-      }
-    )
   }
 
   private fun edits(record: MessageRecord): InfoSection? {
     if (!record.isEditMessage) {
       return null
     }
-    val rows = mutableListOf<InfoRow>()
-    rows += InfoRow("Times edited", record.revisionNumber.toString())
-    rows += InfoRow("Latest version", if (record.isLatestRevision) "Yes" else "No")
-    rows += InfoRow("Original message id", record.originalMessageId?.id?.toString() ?: NOT_SET)
-    return InfoSection("Edits", rows)
+    return section("Edits") {
+      add("Times edited", record.revisionNumber.toString())
+      add("Latest version", if (record.isLatestRevision) "Yes" else "No, a newer one exists")
+    }
   }
 
   /**
@@ -181,31 +198,28 @@ object MessageInfo {
     if (retractedAt <= 0L) {
       return null
     }
-
-    return InfoSection(
-      "Retracted",
-      listOf(
-        InfoRow("They deleted this for everyone", formatTime(retractedAt)),
-        InfoRow("Kept on this device", "Yes, they cannot tell")
-      )
-    )
+    return section("Retracted") {
+      time("They deleted this for everyone", retractedAt)
+      add("Kept on this device", "Yes, they cannot tell")
+    }
   }
 
   /**
    * Device one is always the account's primary phone; anything higher is a linked device such as Desktop
    * or an iPad. This is the only hint the protocol gives about what they were typing on.
    */
-  private fun describeDevice(deviceId: Int): String {
+  private fun describeDevice(deviceId: Int): String? {
     return when {
-      deviceId <= 0 -> NOT_SET
+      deviceId <= 0 -> null
       deviceId == 1 -> "Primary phone"
       else -> "Linked device $deviceId, such as Desktop or iPad"
     }
   }
 
-  private fun describeTransfer(state: Int): String {
+  /** Only worth saying when the file is not simply sitting downloaded on the device. */
+  private fun describeTransfer(state: Int): String? {
     return when (state) {
-      org.thoughtcrime.securesms.database.AttachmentTable.TRANSFER_PROGRESS_DONE -> "Downloaded"
+      org.thoughtcrime.securesms.database.AttachmentTable.TRANSFER_PROGRESS_DONE -> null
       org.thoughtcrime.securesms.database.AttachmentTable.TRANSFER_PROGRESS_STARTED -> "Downloading"
       org.thoughtcrime.securesms.database.AttachmentTable.TRANSFER_PROGRESS_PENDING -> "Pending"
       org.thoughtcrime.securesms.database.AttachmentTable.TRANSFER_PROGRESS_FAILED -> "Failed"
@@ -213,45 +227,40 @@ object MessageInfo {
     }
   }
 
-  private fun formatTime(millis: Long): String {
-    if (millis <= 0) {
-      return NOT_SET
-    }
-    return SimpleDateFormat("MMM d, yyyy  HH:mm:ss.SSS", Locale.getDefault()).format(Date(millis))
-  }
+}
 
-  private fun formatOffset(millis: Long): String {
-    val sign = if (millis >= 0) "+" else "-"
-    return sign + formatDuration(Math.abs(millis))
-  }
+private fun formatTime(millis: Long): String {
+  return SimpleDateFormat("MMM d, yyyy  HH:mm:ss.SSS", Locale.getDefault()).format(Date(millis))
+}
 
-  private fun formatDuration(millis: Long): String {
-    if (millis < 1000) {
-      return "$millis ms"
-    }
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(millis)
-    if (seconds < 60) {
-      return "$seconds s"
-    }
-    val minutes = TimeUnit.SECONDS.toMinutes(seconds)
-    if (minutes < 60) {
-      return "$minutes min"
-    }
-    val hours = TimeUnit.MINUTES.toHours(minutes)
-    return if (hours < 24) "$hours h" else "${TimeUnit.HOURS.toDays(hours)} d"
-  }
+private fun formatOffset(millis: Long): String {
+  val sign = if (millis >= 0) "+" else "-"
+  return sign + formatDuration(Math.abs(millis))
+}
 
-  private fun formatBytes(bytes: Long): String {
-    if (bytes <= 0) {
-      return NOT_SET
-    }
-    if (bytes < 1024) {
-      return "$bytes B"
-    }
-    val kb = bytes / 1024.0
-    if (kb < 1024) {
-      return String.format(Locale.US, "%.1f KB", kb)
-    }
-    return String.format(Locale.US, "%.1f MB", kb / 1024.0)
+private fun formatDuration(millis: Long): String {
+  if (millis < 1000) {
+    return "$millis ms"
   }
+  val seconds = TimeUnit.MILLISECONDS.toSeconds(millis)
+  if (seconds < 60) {
+    return "$seconds s"
+  }
+  val minutes = TimeUnit.SECONDS.toMinutes(seconds)
+  if (minutes < 60) {
+    return "$minutes min"
+  }
+  val hours = TimeUnit.MINUTES.toHours(minutes)
+  return if (hours < 24) "$hours h" else "${TimeUnit.HOURS.toDays(hours)} d"
+}
+
+private fun formatBytes(bytes: Long): String {
+  if (bytes < 1024) {
+    return "$bytes B"
+  }
+  val kb = bytes / 1024.0
+  if (kb < 1024) {
+    return String.format(Locale.US, "%.1f KB", kb)
+  }
+  return String.format(Locale.US, "%.1f MB", kb / 1024.0)
 }

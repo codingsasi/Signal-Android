@@ -67,6 +67,7 @@ open class SignalDatabase(private val context: Application, databaseSecret: Data
   val pendingPniSignatureMessageTable: PendingPniSignatureMessageTable = PendingPniSignatureMessageTable(context, this)
   val messageTagTable: MessageTagTable = MessageTagTable(context, this)
   val retractedMessageTable: RetractedMessageTable = RetractedMessageTable(context, this)
+  val messageViewTable: MessageViewTable = MessageViewTable(context, this)
   val callTable: CallTable = CallTable(context, this)
   val kyberPreKeyTable: KyberPreKeyTable = KyberPreKeyTable(context, this)
   val callLinkTable: CallLinkTable = CallLinkTable(context, this)
@@ -98,6 +99,7 @@ open class SignalDatabase(private val context: Application, databaseSecret: Data
     db.execSQL(MessageTagTable.CREATE_TABLE)
     db.execSQL(MessageTagTable.CREATE_DEFINITION_TABLE)
     db.execSQL(RetractedMessageTable.CREATE_TABLE)
+    db.execSQL(MessageViewTable.CREATE_TABLE)
     db.execSQL(AttachmentTable.CREATE_TABLE)
     db.execSQL(ThreadTable.CREATE_TABLE)
     db.execSQL(IdentityTable.CREATE_TABLE)
@@ -442,6 +444,11 @@ open class SignalDatabase(private val context: Application, databaseSecret: Data
     @get:JvmName("retractedMessages")
     val retractedMessages: RetractedMessageTable
       get() = instance!!.retractedMessageTable
+
+    @get:JvmStatic
+    @get:JvmName("messageViews")
+    val messageViews: MessageViewTable
+      get() = instance!!.messageViewTable
 
     @get:JvmStatic
     @get:JvmName("messageLog")

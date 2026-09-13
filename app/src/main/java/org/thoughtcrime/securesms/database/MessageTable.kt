@@ -2772,9 +2772,34 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
     return setMessagesRead("$STORY_TYPE = 0 AND $PARENT_STORY_ID <= 0 AND ($READ = 0 OR ($REACTIONS_UNREAD = 1 AND ($outgoingTypeClause)) OR ($VOTES_UNREAD = 1 AND ($outgoingTypeClause)))", null)
   }
 
+  /**
+   * Stamps the first time each message here was seen, before the update below flips them to read.
+   *
+   * Restricted to rows that are still unread so a re-read of an already-seen thread records nothing, and
+   * written with OR IGNORE so the unique constraint keeps the original moment if this ever runs twice.
+   * Writes only to the local view table; the message table is untouched by this statement.
+   */
+  private fun recordFirstViewed(where: String, arguments: Array<String>?, now: Long) {
+    try {
+      writableDatabase.execSQL(
+        """
+          INSERT OR IGNORE INTO ${MessageViewTable.TABLE_NAME} (${MessageViewTable.MESSAGE_ID}, ${MessageViewTable.FIRST_VIEWED_AT})
+          SELECT $ID, $now FROM $TABLE_NAME WHERE ($where) AND $READ = 0
+        """,
+        arguments ?: emptyArray()
+      )
+    } catch (e: Exception) {
+      // Never let a bookkeeping failure stop messages from being marked read.
+      Log.w(TAG, "Could not record first-viewed timestamps.", e)
+    }
+  }
+
   private fun setMessagesRead(where: String, arguments: Array<String>?, index: String = INDEX_THREAD_STORY_SCHEDULED_DATE_LATEST_REVISION_ID): List<MarkedMessageInfo> {
     val releaseChannelId = SignalStore.releaseChannel.releaseChannelRecipientId
     val startTime = System.currentTimeMillis()
+
+    recordFirstViewed(where, arguments, startTime)
+
     val results = writableDatabase.rawQuery(
       """
           UPDATE $TABLE_NAME INDEXED BY $index
