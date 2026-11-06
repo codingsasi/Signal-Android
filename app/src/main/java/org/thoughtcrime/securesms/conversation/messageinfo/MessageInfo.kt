@@ -7,6 +7,7 @@ package org.thoughtcrime.securesms.conversation.messageinfo
 
 import android.content.Context
 import androidx.annotation.WorkerThread
+import org.thoughtcrime.securesms.database.GroupReceiptTable
 import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.database.model.MessageRecord
 import org.thoughtcrime.securesms.database.model.MmsMessageRecord
@@ -40,6 +41,7 @@ object MessageInfo {
     return listOfNotNull(
       timing(record),
       origin(context, record),
+      delivery(context, record),
       state(record),
       content(record),
       reactions(context, record),
@@ -84,6 +86,12 @@ object MessageInfo {
   // endregion
 
   private fun timing(record: MessageRecord): InfoSection? = section("Timing") {
+    if (record.isOutgoing) {
+      // For a message we sent, every clock here is ours, so there is no cross-device latency to report.
+      time("Sent from this device", record.dateSent)
+      return@section
+    }
+
     time("Sent by their device", record.dateSent)
     time("Received by server", record.serverTimestamp)
     time("Arrived on this phone", record.dateReceived)
@@ -104,6 +112,10 @@ object MessageInfo {
   }
 
   private fun origin(context: Context, record: MessageRecord): InfoSection? = section("Origin") {
+    if (record.isOutgoing) {
+      add("To", record.toRecipient.getDisplayName(context))
+      return@section
+    }
     add("From", record.fromRecipient.getDisplayName(context))
     add("Their device", describeDevice(record.fromDeviceId))
     flag("Sealed sender", record.isUnidentified, "Yes, the server could not see the sender")
@@ -111,8 +123,10 @@ object MessageInfo {
   }
 
   private fun state(record: MessageRecord): InfoSection? = section("State") {
+    // The read column only means something for incoming messages; outgoing rows are always stored as read.
+    // What the recipient did with an outgoing message is in the Delivery section instead.
     val mms = record as? MmsMessageRecord
-    if (mms != null) {
+    if (mms != null && !record.isOutgoing) {
       add("Read by you", if (mms.isRead) "Yes" else "Not yet")
     }
     if (record.expiresIn > 0) {
@@ -124,6 +138,58 @@ object MessageInfo {
     flag("View once", record.isViewOnce)
     flag("Starred", record.isStarred)
     flag("Deleted", record.isRemoteDelete, "Yes, the content is gone")
+  }
+
+  /**
+   * Outgoing only: what the recipients' devices have reported back. In a 1:1 chat the message row holds a
+   * single receipt timestamp, which is the time of the latest receipt of any type, so it cannot say when
+   * delivery happened separately from reading. Groups keep one row per member with its own timestamp.
+   * A missing read receipt does not prove the message is unread, since recipients can turn receipts off.
+   */
+  private fun delivery(context: Context, record: MessageRecord): InfoSection? {
+    if (!record.isOutgoing) {
+      return null
+    }
+
+    val to = record.toRecipient
+    if (to.isGroup || to.isDistributionList) {
+      val receipts = SignalDatabase.groupReceipts.getGroupReceiptInfo(record.id)
+      return section("Delivery") {
+        receipts.forEach { info ->
+          val name = Recipient.resolved(info.recipientId).getDisplayName(context)
+          val status = describeGroupStatus(info.status)
+          add(name, if (info.timestamp > 0 && info.status >= GroupReceiptTable.STATUS_DELIVERED) "$status at ${formatTime(info.timestamp)}" else status)
+        }
+      }
+    }
+
+    return section("Delivery") {
+      add(
+        "Status",
+        when {
+          record.isFailed -> "Failed to send"
+          record.isPending -> "Sending"
+          record.isViewed -> "Viewed by them"
+          record.hasReadReceipt() -> "Read by them"
+          record.isDelivered -> "Delivered, no read receipt"
+          else -> "Sent, not yet delivered"
+        }
+      )
+      if (record.isDelivered || record.hasReadReceipt() || record.isViewed) {
+        time("Latest receipt", record.receiptTimestamp)
+      }
+    }
+  }
+
+  private fun describeGroupStatus(status: Int): String {
+    return when (status) {
+      GroupReceiptTable.STATUS_VIEWED -> "Viewed"
+      GroupReceiptTable.STATUS_READ -> "Read"
+      GroupReceiptTable.STATUS_DELIVERED -> "Delivered"
+      GroupReceiptTable.STATUS_UNDELIVERED -> "Not yet delivered"
+      GroupReceiptTable.STATUS_SKIPPED -> "Skipped"
+      else -> "Unknown"
+    }
   }
 
   private fun content(record: MessageRecord): InfoSection? = section("Content") {
