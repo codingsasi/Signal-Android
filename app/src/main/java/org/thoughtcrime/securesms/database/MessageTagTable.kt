@@ -6,15 +6,15 @@
 package org.thoughtcrime.securesms.database
 
 import android.content.Context
-import org.signal.core.util.delete
-import org.signal.core.util.insertInto
+import org.signal.core.database.delete
+import org.signal.core.database.insertInto
 import org.signal.core.util.logging.Log
 import org.signal.core.util.readToList
 import org.signal.core.util.readToSingleInt
 import org.signal.core.util.requireLong
 import org.signal.core.util.requireNonNullString
-import org.signal.core.util.select
-import org.signal.core.util.withinTransaction
+import org.signal.core.database.select
+import org.signal.core.database.withinTransaction
 
 /**
  * Private, device-local labels the user can attach to any message.

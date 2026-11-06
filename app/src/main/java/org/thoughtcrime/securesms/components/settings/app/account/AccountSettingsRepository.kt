@@ -6,43 +6,42 @@
 package org.thoughtcrime.securesms.components.settings.app.account
 
 import kotlinx.coroutines.withContext
-import org.signal.appsettings.account.TwoFactorMethod
-import org.signal.appsettings.totp.TotpApp
+import org.signal.core.models.MasterKey
+import org.signal.core.util.PinHashUtil
 import org.signal.core.util.concurrent.SignalDispatchers
 import org.signal.core.util.logging.Log
-import org.thoughtcrime.securesms.components.settings.app.account.authenticator.TotpRepository
-import org.thoughtcrime.securesms.components.settings.app.account.passkeys.AppPasskeysRepository
-import org.thoughtcrime.securesms.dependencies.AppDependencies
+import org.signal.remoteconfig.RemoteConfig
 import org.thoughtcrime.securesms.keyvalue.SignalStore
+import org.thoughtcrime.securesms.keyvalue.keyboardType
 import org.thoughtcrime.securesms.lock.v2.PinKeyboardType
+import org.thoughtcrime.securesms.megaphone.TwoFactorReminderSchedule
 import org.thoughtcrime.securesms.pin.SvrRepository
-import org.thoughtcrime.securesms.util.TextSecurePreferences
-import org.whispersystems.signalservice.api.kbs.PinHashUtil
 import java.io.IOException
 
 /**
  * All of the storage and network access behind [AccountSettingsViewModel].
  */
-class AccountSettingsRepository {
+class AccountSettingsRepository(
+  private val masterKeyProvider: () -> MasterKey = { SignalStore.svr.masterKey }
+) {
 
   companion object {
     private val TAG = Log.tag(AccountSettingsRepository::class)
   }
 
-  private val totpRepository = TotpRepository()
-  private val passkeysRepository = AppPasskeysRepository()
-
   fun hasPin(): Boolean = SignalStore.svr.hasPin() && !SignalStore.svr.hasOptedOut()
 
   fun hasRestoredAep(): Boolean = SignalStore.account.restoredAccountEntropyPool
 
-  fun arePinRemindersEnabled(): Boolean = SignalStore.pin.arePinRemindersEnabled() && SignalStore.svr.hasPin()
+  fun arePinRemindersEnabled(): Boolean = SignalStore.pin.pinRemindersEnabled && SignalStore.svr.hasPin()
 
-  fun setPinRemindersEnabled(enabled: Boolean) = SignalStore.pin.setPinRemindersEnabled(enabled)
+  fun setPinRemindersEnabled(enabled: Boolean) {
+    SignalStore.pin.pinRemindersEnabled = enabled
+  }
 
   fun isRegistrationLockEnabled(): Boolean = SignalStore.svr.isRegistrationLockEnabled
 
-  fun isUserUnregistered(): Boolean = TextSecurePreferences.isUnauthorizedReceived(AppDependencies.application)
+  fun isUserUnregistered(): Boolean = SignalStore.account.isUnauthorizedReceived
 
   fun isClientDeprecated(): Boolean = SignalStore.misc.isClientDeprecated
 
@@ -50,30 +49,14 @@ class AccountSettingsRepository {
 
   fun isPhoneNumberless(): Boolean = SignalStore.account.isPhoneNumberless
 
-  fun getMaxTotpApps(): Int = totpRepository.getMaxApps()
+  fun getMaxTotpApps(): Int = RemoteConfig.maxTotpApps
 
   /**
-   * Every second factor on the account, authenticator apps first, or a failure if we couldn't find out. Passkeys are
-   * mocked for now, so only the authenticator apps can actually fail to load.
+   * How many two-factor methods of every kind the account is allowed at once. Authenticator apps share this limit with
+   * passkeys, so it can be reached even when there's room left under [getMaxTotpApps].
    */
-  suspend fun getTwoFactorMethods(): TwoFactorMethodsResult {
-    val apps = when (val result = totpRepository.getTotpApps()) {
-      is TotpRepository.AppsResult.Success -> result.apps
-      TotpRepository.AppsResult.NetworkFailure -> return TwoFactorMethodsResult.NetworkFailure
-    }
-
-    return TwoFactorMethodsResult.Success(apps.map { it.toTwoFactorMethod() } + passkeysRepository.getPasskeys())
-  }
-
-  /**
-   * Removes an authenticator app from the account, returning whether it's gone. An app the service has already
-   * forgotten counts as gone, since that's the outcome the user asked for.
-   */
-  suspend fun removeTotpApp(appId: Long): Boolean {
-    return when (totpRepository.removeTotpApp(appId)) {
-      TotpRepository.UpdateResult.Success, TotpRepository.UpdateResult.AppNotFound -> true
-      TotpRepository.UpdateResult.NetworkFailure -> false
-    }
+  fun getMaxTwoFactorMethods(): Int {
+    return RemoteConfig.maxTwoFactorMethods
   }
 
   fun verifyLocalPin(pin: String): Boolean {
@@ -103,13 +86,12 @@ class AccountSettingsRepository {
     }
   }
 
-  private fun TotpApp.toTwoFactorMethod(): TwoFactorMethod {
-    return TwoFactorMethod(id = id, kind = TwoFactorMethod.Kind.AUTHENTICATOR_APP, name = name, createdAt = createdAt)
+  fun masterKey(): MasterKey {
+    return masterKeyProvider()
   }
 
-  sealed interface TwoFactorMethodsResult {
-    data class Success(val methods: List<TwoFactorMethod>) : TwoFactorMethodsResult
-
-    data object NetworkFailure : TwoFactorMethodsResult
+  /** Lets the two-factor reminder know whether there's anything to remind the user about. */
+  fun setHasTwoFactorMethods(hasMethods: Boolean) {
+    TwoFactorReminderSchedule.onMethodsObserved(hasMethods)
   }
 }

@@ -46,7 +46,7 @@ class EnterAepForLocalBackupViewModel(
   private val resultBus: ResultEventBus,
   private val resultKey: String,
   isPasswordManagerAvailable: Boolean = false
-) : EventDrivenViewModel<EnterAepEvents>(TAG) {
+) : EventDrivenViewModel<EnterAepEvents>(TAG, shouldLogEvents = true) {
 
   companion object {
     private val TAG = Log.tag(EnterAepForLocalBackupViewModel::class)
@@ -85,6 +85,12 @@ class EnterAepForLocalBackupViewModel(
       }
       is EnterAepEvents.DismissDifferentAccountDialog -> {
         stateEmitter(inputState.copy(showDifferentAccountDialog = false))
+      }
+      is EnterAepEvents.TryAnotherWay,
+      is EnterAepEvents.RecoveryKeyHelp,
+      is EnterAepEvents.ConfirmVerifyWithSms,
+      is EnterAepEvents.DismissVerifyWithSmsDialog -> {
+        error("Verify-with-SMS handling only exists for pre-registration remote backup restores.")
       }
     }
   }
@@ -174,7 +180,7 @@ class EnterAepForLocalBackupViewModel(
             error("[Submit] Device transfer possible. This should not happen with RRP-based registration.")
           }
           is RegisterAccountError.InvalidReceiptCredentialPresentation,
-          RegisterAccountError.TotpMissingOrIncorrect,
+          is RegisterAccountError.TwoFactorRequired,
           RegisterAccountError.PostQuantumRatchetRequired -> {
             Log.w(TAG, "[Submit] Unexpected registration error: $error")
             stateEmitter(

@@ -23,7 +23,7 @@ class EnterAepForRemoteBackupPostRegistrationViewModel(
   private val repository: RegistrationRepository,
   private val parentEventEmitter: (RegistrationFlowEvent) -> Unit,
   isPasswordManagerAvailable: Boolean = false
-) : EventDrivenViewModel<EnterAepEvents>(TAG) {
+) : EventDrivenViewModel<EnterAepEvents>(TAG, shouldLogEvents = true) {
 
   companion object {
     private val TAG = Log.tag(EnterAepForRemoteBackupPostRegistrationViewModel::class)
@@ -54,6 +54,12 @@ class EnterAepForRemoteBackupPostRegistrationViewModel(
       is EnterAepEvents.ConfirmDifferentAccountRestore,
       is EnterAepEvents.DismissDifferentAccountDialog -> {
         error("Different-account handling only exists for local backup restores.")
+      }
+      is EnterAepEvents.TryAnotherWay,
+      is EnterAepEvents.RecoveryKeyHelp,
+      is EnterAepEvents.ConfirmVerifyWithSms,
+      is EnterAepEvents.DismissVerifyWithSmsDialog -> {
+        error("Verify-with-SMS handling only exists for pre-registration remote backup restores.")
       }
     }
   }

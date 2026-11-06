@@ -9,6 +9,7 @@ import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.jobmanager.Job
 import org.thoughtcrime.securesms.jobmanager.impl.NetworkConstraint
 import org.thoughtcrime.securesms.keyvalue.SignalStore
+import org.thoughtcrime.securesms.keyvalue.manifest
 import org.thoughtcrime.securesms.net.SignalNetwork
 import org.thoughtcrime.securesms.profiles.manage.UsernameRepository.reclaimUsernameIfNecessary
 import org.thoughtcrime.securesms.recipients.Recipient.Companion.self
@@ -56,7 +57,7 @@ class StorageAccountRestoreJob private constructor(parameters: Parameters) : Bas
       SignalStore.storageService.storageKey
     }
 
-    val repository = StorageServiceService(SignalNetwork.storageService)
+    val repository = SignalNetwork.storageService
 
     Log.i(TAG, "Retrieving manifest...")
     val manifest: SignalStorageManifest? = when (val result = repository.getStorageManifest(storageServiceKey)) {
@@ -112,7 +113,7 @@ class StorageAccountRestoreJob private constructor(parameters: Parameters) : Bas
     Log.i(TAG, "Applying changes locally...")
     SignalDatabase.writableDatabase.beginTransaction()
     try {
-      StorageSyncHelper.applyAccountStorageSyncUpdates(context, self().fresh(), accountRecord, false)
+      StorageSyncHelper.applyAccountStorageSyncUpdates(self().fresh(), accountRecord, false)
       SignalDatabase.writableDatabase.setTransactionSuccessful()
     } finally {
       SignalDatabase.writableDatabase.endTransaction()

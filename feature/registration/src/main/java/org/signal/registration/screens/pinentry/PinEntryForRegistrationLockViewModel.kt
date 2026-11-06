@@ -40,7 +40,7 @@ class PinEntryForRegistrationLockViewModel(
   private val parentEventEmitter: (RegistrationFlowEvent) -> Unit,
   private val timeRemaining: Long,
   private val svrCredentials: SvrCredentials
-) : EventDrivenViewModel<PinEntryScreenEvents>(TAG) {
+) : EventDrivenViewModel<PinEntryScreenEvents>(TAG, shouldLogEvents = false) {
 
   companion object {
     private val TAG = Log.tag(PinEntryForRegistrationLockViewModel::class)
@@ -150,13 +150,17 @@ class PinEntryForRegistrationLockViewModel(
       return state
     }
 
+    // If this install was already registered with this number, its key material has to carry forward
+    val preExistingRegistrationData = parentState.value.preExistingRegistrationData?.takeIf { it.e164 == e164 }
+
     val registerResult = if (sessionId != null) {
       Log.d(TAG, "[PinEntered] Attempting to register with the session and registration lock token...")
       repository.registerAccountWithSession(
         e164 = e164,
         sessionId = sessionId,
         registrationLock = registrationLockToken,
-        skipDeviceTransfer = true
+        skipDeviceTransfer = true,
+        preExistingRegistrationData = preExistingRegistrationData
       )
     } else {
       Log.d(TAG, "[PinEntered] No session present. Attempting to register with the RRP from the restored master key and the registration lock token...")
@@ -164,7 +168,8 @@ class PinEntryForRegistrationLockViewModel(
         e164 = e164,
         recoveryPassword = masterKey.deriveRegistrationRecoveryPassword(),
         registrationLock = registrationLockToken,
-        skipDeviceTransfer = true
+        skipDeviceTransfer = true,
+        preExistingRegistrationData = preExistingRegistrationData
       )
     }
 
@@ -222,7 +227,7 @@ class PinEntryForRegistrationLockViewModel(
             state
           }
           is RegisterAccountError.InvalidReceiptCredentialPresentation,
-          RegisterAccountError.TotpMissingOrIncorrect,
+          is RegisterAccountError.TwoFactorRequired,
           RegisterAccountError.PostQuantumRatchetRequired -> {
             Log.w(TAG, "[PinEntered] Unexpected error when registering: $error")
             state.copy(loading = false, dialogs = state.dialogs.copy(unknownError = true))

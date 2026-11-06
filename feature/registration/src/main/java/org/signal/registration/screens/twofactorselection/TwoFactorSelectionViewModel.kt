@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import org.signal.core.ui.compose.EventDrivenViewModel
 import org.signal.core.util.logging.Log
 import org.signal.registration.RegistrationFlowEvent
@@ -27,7 +28,7 @@ import org.signal.registration.screens.util.navigateTo
 class TwoFactorSelectionViewModel(
   methods: List<TwoFactorMethod>,
   private val parentEventEmitter: (RegistrationFlowEvent) -> Unit
-) : EventDrivenViewModel<TwoFactorSelectionScreenEvents>(TAG) {
+) : EventDrivenViewModel<TwoFactorSelectionScreenEvents>(TAG, shouldLogEvents = true) {
 
   companion object {
     private val TAG = Log.tag(TwoFactorSelectionViewModel::class)
@@ -48,13 +49,19 @@ class TwoFactorSelectionViewModel(
   override suspend fun processEvent(event: TwoFactorSelectionScreenEvents) {
     when (event) {
       is TwoFactorSelectionScreenEvents.MethodSelected -> {
-        when (event.method) {
-          TwoFactorMethod.Passkey -> _actions.send(TwoFactorSelectionAction.AuthenticateWithPasskey)
+        when (val method = event.method) {
+          is TwoFactorMethod.Passkey -> _actions.send(TwoFactorSelectionAction.AuthenticateWithPasskey(method.parameters))
           TwoFactorMethod.AuthenticatorApp -> parentEventEmitter.navigateTo(RegistrationRoute.TotpEntry)
         }
       }
       TwoFactorSelectionScreenEvents.CancelClicked -> {
         parentEventEmitter.navigateBack()
+      }
+      TwoFactorSelectionScreenEvents.PasskeyCeremonyFailed -> {
+        _state.update { it.copy(showPasskeyError = true) }
+      }
+      TwoFactorSelectionScreenEvents.PasskeyErrorDismissed -> {
+        _state.update { it.copy(showPasskeyError = false) }
       }
     }
   }

@@ -5,8 +5,6 @@
 
 package org.signal.appsettings.account
 
-import org.signal.appsettings.totp.TotpApp
-
 /**
  * One-shot side effects that need an Activity or the legacy nav graph, and therefore have to be carried out by
  * [AccountSettingsFragment] rather than the screen itself.
@@ -33,11 +31,20 @@ sealed interface AccountSettingsAction {
   /** Open the screen that shows the account and recovery keys that make up the Signal Login. */
   data object NavigateToSignalLoginDetails : AccountSettingsAction
 
+  /** Ask the user to get past their screen lock before we send them into authenticator app setup. */
+  data object AuthenticateToAddTotpApp : AccountSettingsAction
+
   /** Open the flow that pairs a new authenticator app. */
   data object NavigateToTotpSetup : AccountSettingsAction
 
-  /** Open the screen that renames [app]. */
-  data class NavigateToRenameTotpApp(val app: TotpApp) : AccountSettingsAction
+  /** Ask the user to get past their screen lock before we open passkey setup. */
+  data object AuthenticateToAddPasskey : AccountSettingsAction
+
+  /** Open the screen that explains passkeys and sets one up. */
+  data object NavigateToPasskeySetup : AccountSettingsAction
+
+  /** Open the screen that renames [method]. */
+  data class NavigateToRenameMethod(val method: TwoFactorMethod) : AccountSettingsAction
 
   /** Ask the user to get past their screen lock before we remove [method] from the account. */
   data class AuthenticateToRemoveMethod(val method: TwoFactorMethod) : AccountSettingsAction
@@ -45,14 +52,14 @@ sealed interface AccountSettingsAction {
   /** Tell the user we couldn't confirm it was them, so whatever they asked for didn't happen. */
   data object ShowAuthenticationFailed : AccountSettingsAction
 
-  /** Tell the user their authenticator app was removed. */
-  data object ShowTotpAppRemoved : AccountSettingsAction
+  /** Tell the user their second factor of [kind] was removed. */
+  data class ShowMethodRemoved(val kind: TwoFactorMethod.Kind) : AccountSettingsAction
 
-  /** Tell the user the removal didn't go through, so they know the app is still on the account. */
-  data object ShowTotpAppRemovalFailed : AccountSettingsAction
+  /** Tell the user the removal didn't go through, so they know the method is still on the account. */
+  data class ShowMethodRemovalFailed(val kind: TwoFactorMethod.Kind) : AccountSettingsAction
 
-  /** Send the user to a support article about two-factor authentication. */
-  data object OpenLearnMore : AccountSettingsAction
+  /** Send the user to the support article at [url]. */
+  data class OpenSupportArticle(val url: String) : AccountSettingsAction
 
   /** Open the advanced PIN settings screen. */
   data object NavigateToAdvancedPinSettings : AccountSettingsAction
@@ -71,6 +78,9 @@ sealed interface AccountSettingsAction {
 
   /** Open registration so the user can re-register. */
   data object LaunchReRegistration : AccountSettingsAction
+
+  /** Ask the user to get past their screen lock before we send them into the delete account flow. */
+  data object AuthenticateToDeleteAccount : AccountSettingsAction
 
   /** Open the delete account flow. */
   data object NavigateToDeleteAccount : AccountSettingsAction

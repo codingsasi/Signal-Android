@@ -1,12 +1,20 @@
 package org.thoughtcrime.securesms.keyvalue
 
 import org.signal.archive.proto.BackupDebugInfo
+import org.signal.remoteconfig.RemoteConfig
 import org.signal.ringrtc.CallManager.DataMode
+import org.signal.storage.keyvalue.KeyValueStore
+import org.signal.storage.keyvalue.SignalStoreValueDelegate
+import org.signal.storage.keyvalue.SignalStoreValues
+import org.signal.storage.keyvalue.booleanValue
+import org.signal.storage.keyvalue.integerValue
+import org.signal.storage.keyvalue.map
+import org.signal.storage.keyvalue.protoValue
+import org.signal.storage.keyvalue.withPrecondition
 import org.thoughtcrime.securesms.BuildConfig
 import org.thoughtcrime.securesms.database.model.IssuePriority
 import org.thoughtcrime.securesms.keyvalue.protos.IssueNotifyTimes
 import org.thoughtcrime.securesms.util.Environment.Calling.defaultSfuUrl
-import org.thoughtcrime.securesms.util.RemoteConfig
 
 class InternalValues internal constructor(store: KeyValueStore) : SignalStoreValues(store) {
   companion object {
@@ -49,7 +57,8 @@ class InternalValues internal constructor(store: KeyValueStore) : SignalStoreVal
 
   public override fun onFirstEverAppLaunch() = Unit
 
-  public override fun getKeysToIncludeInBackup(): List<String> = emptyList()
+  override val keysToIncludeInBackup: List<String>
+    get() = emptyList()
 
   /**
    * Members will not be added directly to a GV2 even if they could be.

@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,6 +76,7 @@ import org.signal.core.ui.compose.SignalIcons
 import org.signal.core.ui.compose.TextFields
 import org.signal.core.ui.compose.Tooltips
 import org.signal.core.ui.compose.circularReveal
+import org.signal.core.ui.compose.statusBarsCompat
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.avatar.AvatarImage
 import org.thoughtcrime.securesms.calls.log.CallLogFilter
@@ -96,6 +96,7 @@ interface MainToolbarCallback {
   fun onClearUnreadChatsFilterClick()
   fun onOpenArchiveClick()
   fun onSettingsClick()
+  fun onDonateClick()
   fun onNotificationProfileClick()
   fun onProxyClick()
   fun onSearchClick()
@@ -120,6 +121,7 @@ interface MainToolbarCallback {
     override fun onClearUnreadChatsFilterClick() = Unit
     override fun onOpenArchiveClick() = Unit
     override fun onSettingsClick() = Unit
+    override fun onDonateClick() = Unit
     override fun onNotificationProfileClick() = Unit
     override fun onProxyClick() = Unit
     override fun onSearchClick() = Unit
@@ -230,7 +232,7 @@ fun MainToolbar(
               state = state,
               callback = callback,
               modifier = Modifier
-                .windowInsetsPadding(WindowInsets.statusBars)
+                .windowInsetsPadding(WindowInsets.statusBarsCompat)
                 .circularReveal(visibility, revealOffset)
             )
           }
@@ -494,9 +496,10 @@ private fun TooltipOverflowButton(
   onDismiss: () -> Unit,
   isTooltipVisible: Boolean
 ) {
-  Tooltips.PlainBelowAnchor(
+  Tooltips.Popup(
     onDismiss = onDismiss,
     isTooltipVisible = isTooltipVisible,
+    position = Tooltips.Position.Below,
     tooltipContent = {
       Text(text = stringResource(R.string.ConversationListFragment__turn_your_notification_profile_on_or_off_here))
     },
@@ -576,6 +579,22 @@ private fun HeadsUpIndicator(state: MainToolbarState, modifier: Modifier = Modif
 }
 
 @Composable
+private fun DonateDropdownItem(callback: MainToolbarCallback, onOptionSelected: () -> Unit) {
+  DropdownMenus.Item(
+    leadingIconResId = R.drawable.symbol_heart_24,
+    text = {
+      Text(
+        text = stringResource(R.string.MainToolbar__donate_to_signal)
+      )
+    },
+    onClick = {
+      callback.onDonateClick()
+      onOptionSelected()
+    }
+  )
+}
+
+@Composable
 private fun StoryDropDownItems(callback: MainToolbarCallback, onOptionSelected: () -> Unit) {
   DropdownMenus.Item(
     leadingIconResId = CoreUiR.drawable.symbol_lock_24,
@@ -589,6 +608,8 @@ private fun StoryDropDownItems(callback: MainToolbarCallback, onOptionSelected: 
       onOptionSelected()
     }
   )
+
+  DonateDropdownItem(callback, onOptionSelected)
 }
 
 @Composable
@@ -646,6 +667,8 @@ private fun CallDropdownItems(callFilter: CallLogFilter, callback: MainToolbarCa
       onOptionSelected()
     }
   )
+
+  DonateDropdownItem(callback, onOptionSelected)
 
   DropdownMenus.Item(
     leadingIconResId = CoreUiR.drawable.symbol_settings_android_24,
@@ -772,6 +795,8 @@ private fun ChatDropdownItems(state: MainToolbarState, callback: MainToolbarCall
       }
     )
   }
+
+  DonateDropdownItem(callback, onOptionSelected)
 
   DropdownMenus.Item(
     leadingIconResId = CoreUiR.drawable.symbol_settings_android_24,

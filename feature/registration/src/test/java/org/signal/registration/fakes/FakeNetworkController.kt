@@ -109,7 +109,7 @@ class FakeNetworkController(
   }
 
   data class UpdateSessionRequest(val sessionId: String?, val pushChallengeToken: String?, val captchaToken: String?)
-  data class RegisterAccountRequest(val e164: String?, val sessionId: String?, val recoveryPassword: String?, val registrationLock: String?, val aci: ACI? = null, val pniPreKeys: PreKeyCollection? = null, val pniRegistrationId: Int? = null, val receiptCredentialPresentation: ReceiptCredentialPresentation? = null, val totp: Int? = null)
+  data class RegisterAccountRequest(val e164: String?, val sessionId: String?, val recoveryPassword: String?, val registrationLock: String?, val aci: ACI? = null, val pniPreKeys: PreKeyCollection? = null, val pniRegistrationId: Int? = null, val receiptCredentialPresentation: ReceiptCredentialPresentation? = null, val totp: Int? = null, val webAuthnResponse: String? = null)
   data class SetPinRequest(val pin: String, val masterKey: MasterKey)
   data class RestoreMasterKeyRequest(val svrCredentials: SvrCredentials, val pin: String)
   data class SetRestoreMethodRequest(val token: String, val method: RestoreMethod)
@@ -131,6 +131,8 @@ class FakeNetworkController(
   var lastRestoreMasterKeyRequest: RestoreMasterKeyRequest? = null
     private set
   var lastSetRestoreMethodRequest: SetRestoreMethodRequest? = null
+    private set
+  var lastRegisterAsLinkedDeviceAttributes: DeviceAttributes? = null
     private set
   var accountAttributesSyncJobEnqueued = false
     private set
@@ -193,6 +195,10 @@ class FakeNetworkController(
       "Attempted to register with a session before it was verified!"
     }
     RequestResult.Success(registerAccountResponse(request.e164))
+  }
+
+  var onRegisterAsLinkedDevice: suspend (DeviceAttributes) -> RequestResult<LinkDeviceResponse, RegisterAsLinkedDeviceError> = {
+    notExpected()
   }
 
   var onSetPinAndMasterKeyOnSvr: suspend (SetPinRequest) -> RequestResult<SvrCredentials?, BackupMasterKeyError> = {
@@ -286,17 +292,23 @@ class FakeNetworkController(
    */
   fun provisioningMessage(
     aep: AccountEntropyPool,
-    e164: String,
+    e164: String?,
     tier: ProvisioningMessage.Tier? = ProvisioningMessage.Tier.PAID,
     pin: String? = null,
-    restoreMethodToken: String = "restore-method-token"
+    restoreMethodToken: String = "restore-method-token",
+    aci: ACI = ACI.from(UUID.randomUUID())
   ): ProvisioningMessage {
     return ProvisioningMessage(
       accountEntropyPool = aep.value,
+      aci = aci,
       e164 = e164,
       pin = pin,
       aciIdentityKeyPair = IdentityKeyPair.generate(),
-      pniIdentityKeyPair = IdentityKeyPair.generate(),
+      pniIdentityKeyPair = if (e164 != null) {
+        IdentityKeyPair.generate()
+      } else {
+        null
+      },
       platform = ProvisioningMessage.Platform.ANDROID,
       tier = tier,
       backupTimestampMs = 1_700_000_000_000,
@@ -369,9 +381,10 @@ class FakeNetworkController(
     fcmToken: String?,
     skipDeviceTransfer: Boolean,
     aci: ACI?,
-    totp: Int?
+    totp: Int?,
+    webAuthnResponse: String?
   ): RequestResult<RegisterAccountResponse, RegisterAccountError> {
-    val request = RegisterAccountRequest(e164, sessionId, recoveryPassword, attributes.registrationLock, aci, pniPreKeys, attributes.pniRegistrationId, receiptCredentialPresentation, totp)
+    val request = RegisterAccountRequest(e164, sessionId, recoveryPassword, attributes.registrationLock, aci, pniPreKeys, attributes.pniRegistrationId, receiptCredentialPresentation, totp, webAuthnResponse)
     lastRegisterAccountRequest = request
     return onRegisterAccount(request)
   }
@@ -497,7 +510,10 @@ class FakeNetworkController(
     aciPreKeys: PreKeyCollection,
     pniPreKeys: PreKeyCollection?,
     fcmToken: String?
-  ): RequestResult<LinkDeviceResponse, RegisterAsLinkedDeviceError> = notExpected()
+  ): RequestResult<LinkDeviceResponse, RegisterAsLinkedDeviceError> {
+    lastRegisterAsLinkedDeviceAttributes = deviceAttributes
+    return onRegisterAsLinkedDevice(deviceAttributes)
+  }
 
   override suspend fun onLinkedDeviceRegistered() = notExpected()
 

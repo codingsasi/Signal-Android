@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.signal.appsettings.R
+import org.signal.appsettings.appSettingsScreen
 import org.signal.core.ui.compose.Buttons
 import org.signal.core.ui.compose.DayNightPreviews
 import org.signal.core.ui.compose.Dialogs
@@ -84,6 +85,7 @@ fun TotpSetupScreen(
         modifier = Modifier
           .weight(1f)
           .verticalScroll(rememberScrollState())
+          .appSettingsScreen()
           .testTag(TotpSetupTestTags.SCROLLER)
       ) {
         TextWithLearnMore(
@@ -97,8 +99,8 @@ fun TotpSetupScreen(
           illustration = {
             StepImage(
               image = R.drawable.image_authenticator_install_app,
-              width = 48.dp,
-              height = 52.dp
+              width = 64.dp,
+              height = 64.dp
             )
           }
         )
@@ -109,8 +111,8 @@ fun TotpSetupScreen(
           illustration = {
             StepImage(
               image = R.drawable.image_authenticator_open_app,
-              width = 45.dp,
-              height = 86.dp
+              width = 64.dp,
+              height = 96.dp
             )
           }
         ) {
@@ -177,8 +179,8 @@ fun TotpSetupScreen(
           illustration = {
             StepImage(
               image = R.drawable.image_authenticator_copy_code,
-              width = 62.dp,
-              height = 38.dp
+              width = 64.dp,
+              height = 64.dp
             )
           }
         )
@@ -194,7 +196,7 @@ fun TotpSetupScreen(
           contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ),
         modifier = Modifier
-          .fillMaxWidth()
+          .appSettingsScreen()
           .padding(horizontal = 40.dp, vertical = 16.dp)
           .testTag(TotpSetupTestTags.BUTTON_CONTINUE)
       ) {

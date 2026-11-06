@@ -17,8 +17,6 @@ import org.signal.core.util.logging.Log
 import org.signal.registration.RegistrationFlowEvent
 import org.signal.registration.RegistrationFlowState
 import org.signal.registration.RegistrationRoute
-import org.signal.registration.screens.aepentry.AepInput
-import org.signal.registration.screens.shared.AccountIdFormat
 import org.signal.registration.screens.util.navigateBack
 import org.signal.registration.screens.util.navigateTo
 
@@ -32,7 +30,7 @@ import org.signal.registration.screens.util.navigateTo
 class SignalLoginManualSaveConfirmationViewModel(
   private val parentState: StateFlow<RegistrationFlowState>,
   private val parentEventEmitter: (RegistrationFlowEvent) -> Unit
-) : EventDrivenViewModel<SignalLoginCredentialEntryScreenEvents>(TAG) {
+) : EventDrivenViewModel<SignalLoginCredentialEntryScreenEvents>(TAG, shouldLogEvents = true) {
 
   companion object {
     private val TAG = Log.tag(SignalLoginManualSaveConfirmationViewModel::class)
@@ -84,8 +82,9 @@ class SignalLoginManualSaveConfirmationViewModel(
         error("There is no 'need help' button in ${SignalLoginCredentialEntryState.Mode.ConfirmSaved} mode, so this event can't happen.")
       }
 
-      is SignalLoginCredentialEntryScreenEvents.TwoFactorCodeEntered -> {
-        error("Confirming a saved login never talks to the service, so it can never ask for a two-factor code.")
+      is SignalLoginCredentialEntryScreenEvents.TwoFactorCodeEntered,
+      is SignalLoginCredentialEntryScreenEvents.PasskeyAssertionReceived -> {
+        error("Confirming a saved login never talks to the service, so it can never ask for a second factor.")
       }
     }
   }
@@ -100,14 +99,7 @@ class SignalLoginManualSaveConfirmationViewModel(
     parentEventEmitter: (RegistrationFlowEvent) -> Unit,
     stateEmitter: (SignalLoginCredentialEntryState) -> Unit
   ) {
-    val accountId = AccountIdFormat.normalize(event.accountId).ifEmpty { state.accountId }
-    val filledState = state.copy(
-      accountId = accountId,
-      accountIdError = AccountIdFormat.validate(accountId),
-      isAccountIdPrefilled = false,
-      recoveryKey = AepInput.from(event.recoveryKey),
-      areCredentialsIncorrect = false
-    )
+    val filledState = SignalLoginCredentialEntryScreenEventHandler.applyPasswordManagerCredential(state, event)
 
     stateEmitter(filledState)
 
@@ -138,7 +130,7 @@ class SignalLoginManualSaveConfirmationViewModel(
       return
     }
 
-    val matches = AccountIdFormat.toAciOrNull(state.accountId) == expectedAci && state.recoveryKey.normalized == expectedAep.value
+    val matches = SignalLoginCredentialEntryScreenEventHandler.matchesLogin(state, expectedAci, expectedAep)
 
     if (matches) {
       Log.i(TAG, "[Next] The user typed back the login they were shown.")

@@ -28,6 +28,7 @@ import org.junit.Test
 import org.signal.appsettings.totpcodeentry.TotpCodeEntryAction
 import org.signal.appsettings.totpcodeentry.TotpCodeEntryEvent
 import org.signal.appsettings.totpcodeentry.TotpCodeEntryState.Error
+import org.signal.uicomponents.codeentryfield.CodeEntryFieldEvents
 import org.thoughtcrime.securesms.testing.CoroutineDispatcherRule
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -36,6 +37,7 @@ class TotpCodeEntryViewModelTest {
   companion object {
     private const val FULL_CODE = "123456"
     private const val APP_ID = 3L
+    private const val CREATED_AT = 1_700_000_000_000L
   }
 
   private val testDispatcher = UnconfinedTestDispatcher()
@@ -48,8 +50,7 @@ class TotpCodeEntryViewModelTest {
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
 
-    coEvery { repository.confirmPendingApp(any()) } returns TotpRepository.ConfirmResult.Success(APP_ID)
-    coEvery { repository.removeTotpApp(any()) } returns TotpRepository.UpdateResult.Success
+    coEvery { repository.confirmPendingApp(any()) } returns TotpRepository.ConfirmResult.Success(appId = APP_ID, createdAt = CREATED_AT)
   }
 
   @After
@@ -58,24 +59,15 @@ class TotpCodeEntryViewModelTest {
   }
 
   @Test
-  fun `non-digits are dropped and the code is capped at six digits`() = runTest(testDispatcher) {
-    val viewModel = createViewModel()
-
-    viewModel.onEvent(TotpCodeEntryEvent.CodeChanged("12a34 5678"))
-
-    assertThat(viewModel.state.value.code).isEqualTo(FULL_CODE)
-  }
-
-  @Test
   fun `a partial code can't be submitted`() = runTest(testDispatcher) {
     val viewModel = createViewModel()
     val actions = collectActions(viewModel.actions)
 
-    viewModel.onEvent(TotpCodeEntryEvent.CodeChanged("123"))
+    enterCode(viewModel, "123")
 
     assertThat(viewModel.state.value.canSubmit).isFalse()
 
-    viewModel.onEvent(TotpCodeEntryEvent.DoneClicked)
+    viewModel.onEvent(TotpCodeEntryEvent.NextClicked)
 
     assertThat(actions).isEmpty()
   }
@@ -87,7 +79,7 @@ class TotpCodeEntryViewModelTest {
 
     submit(viewModel)
 
-    assertThat(actions.last()).isEqualTo(TotpCodeEntryAction.NavigateToNaming(APP_ID))
+    assertThat(actions.last()).isEqualTo(TotpCodeEntryAction.NavigateToNaming(appId = APP_ID, createdAt = CREATED_AT))
   }
 
   @Test
@@ -124,7 +116,7 @@ class TotpCodeEntryViewModelTest {
     val viewModel = createViewModel()
     submit(viewModel)
 
-    viewModel.onEvent(TotpCodeEntryEvent.CodeChanged("1"))
+    enterCode(viewModel, "1")
 
     assertThat(viewModel.state.value.error).isEqualTo(Error.None)
   }
@@ -140,8 +132,12 @@ class TotpCodeEntryViewModelTest {
   }
 
   private fun submit(viewModel: TotpCodeEntryViewModel) {
-    viewModel.onEvent(TotpCodeEntryEvent.CodeChanged(FULL_CODE))
-    viewModel.onEvent(TotpCodeEntryEvent.DoneClicked)
+    enterCode(viewModel, FULL_CODE)
+    viewModel.onEvent(TotpCodeEntryEvent.NextClicked)
+  }
+
+  private fun enterCode(viewModel: TotpCodeEntryViewModel, code: String) {
+    viewModel.onEvent(TotpCodeEntryEvent.CodeEntryEvent(CodeEntryFieldEvents.CodeChanged(code)))
   }
 
   private fun createViewModel() = TotpCodeEntryViewModel(repository = repository)

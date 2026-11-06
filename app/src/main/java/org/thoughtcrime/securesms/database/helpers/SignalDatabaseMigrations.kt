@@ -3,7 +3,7 @@ package org.thoughtcrime.securesms.database.helpers
 import android.app.Application
 import android.content.Context
 import android.database.sqlite.SQLiteException
-import org.signal.core.util.areForeignKeyConstraintsEnabled
+import org.signal.core.database.areForeignKeyConstraintsEnabled
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.database.helpers.migration.SignalDatabaseMigration
@@ -180,10 +180,15 @@ import org.thoughtcrime.securesms.database.helpers.migration.V324_MoveGroupV1Sto
 import org.thoughtcrime.securesms.database.helpers.migration.V325_AddBlockedAtToRecipientTable
 import org.thoughtcrime.securesms.database.helpers.migration.V326_AddUnreadReminderColumn
 import org.thoughtcrime.securesms.database.helpers.migration.V327_AddLastUnreadReminderColumn
-import org.thoughtcrime.securesms.database.helpers.migration.V328_AddMessageTagTable
-import org.thoughtcrime.securesms.database.helpers.migration.V329_AddTagDefinitionTable
-import org.thoughtcrime.securesms.database.helpers.migration.V330_AddRetractedMessageTable
-import org.thoughtcrime.securesms.database.helpers.migration.V331_AddMessageViewTable
+import org.thoughtcrime.securesms.database.helpers.migration.V328_AddSharedNameToRecipientTable
+import org.thoughtcrime.securesms.database.helpers.migration.V329_AddStickerFavoriteColumns
+import org.thoughtcrime.securesms.database.helpers.migration.V330_AddHiddenPackColumns
+import org.thoughtcrime.securesms.database.helpers.migration.V331_AddMessageThreadDateSentIndex
+import org.thoughtcrime.securesms.database.helpers.migration.V332_FixForkMigrationOverlap
+import org.thoughtcrime.securesms.database.helpers.migration.V333_AddMessageTagTable
+import org.thoughtcrime.securesms.database.helpers.migration.V334_AddTagDefinitionTable
+import org.thoughtcrime.securesms.database.helpers.migration.V335_AddRetractedMessageTable
+import org.thoughtcrime.securesms.database.helpers.migration.V336_AddMessageViewTable
 import org.thoughtcrime.securesms.database.SQLiteDatabase as SignalSqliteDatabase
 
 /**
@@ -372,13 +377,18 @@ object SignalDatabaseMigrations {
     325 to V325_AddBlockedAtToRecipientTable,
     326 to V326_AddUnreadReminderColumn,
     327 to V327_AddLastUnreadReminderColumn,
-    328 to V328_AddMessageTagTable,
-    329 to V329_AddTagDefinitionTable,
-    330 to V330_AddRetractedMessageTable,
-    331 to V331_AddMessageViewTable
+    328 to V328_AddSharedNameToRecipientTable,
+    329 to V329_AddStickerFavoriteColumns,
+    330 to V330_AddHiddenPackColumns,
+    331 to V331_AddMessageThreadDateSentIndex,
+    332 to V332_FixForkMigrationOverlap,
+    333 to V333_AddMessageTagTable,
+    334 to V334_AddTagDefinitionTable,
+    335 to V335_AddRetractedMessageTable,
+    336 to V336_AddMessageViewTable
   )
 
-  const val DATABASE_VERSION = 331
+  const val DATABASE_VERSION = 336
 
   @JvmStatic
   fun migrate(context: Application, db: SignalSqliteDatabase, oldVersion: Int, newVersion: Int) {

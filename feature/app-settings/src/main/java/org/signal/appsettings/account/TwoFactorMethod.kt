@@ -11,21 +11,28 @@ import org.signal.core.util.censor
  * One second factor on the user's account, as shown in the unified two-factor list on [AccountSettingsScreen].
  *
  * Ids are only unique within a [kind], since each kind comes from a different place on the account, so anything
- * identifying a method has to carry both.
+ * identifying a method has to carry both. [name] and [createdAt] are null when the method's metadata couldn't be
+ * decrypted.
  */
 data class TwoFactorMethod(
   val id: Long,
   val kind: Kind,
-  val name: String,
+  val name: String?,
   /** When the method was added to the account, in epoch milliseconds. */
-  val createdAt: Long
+  val createdAt: Long?
 ) {
 
   /** What sort of second factor this is, which decides its icon, its subtitle, and what its menu can do. */
   enum class Kind {
     AUTHENTICATOR_APP,
-    PASSKEY
+    PASSKEY,
+
+    /**
+     * A kind this build doesn't know about, which a newer linked device added. It still counts against the account's
+     * limit, so it's shown and can be removed, just without anything specific to say about it.
+     */
+    OTHER
   }
 
-  override fun toString(): String = "TwoFactorMethod(id=$id, kind=$kind, name=${name.censor()}, createdAt=$createdAt)"
+  override fun toString(): String = "TwoFactorMethod(id=$id, kind=$kind, name=${name?.censor()}, createdAt=$createdAt)"
 }

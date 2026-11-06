@@ -7,7 +7,7 @@ package org.thoughtcrime.securesms.database
 
 import android.content.Context
 import org.signal.core.util.readToSingleLong
-import org.signal.core.util.select
+import org.signal.core.database.select
 
 /**
  * Records the first moment each message was marked read on this device.

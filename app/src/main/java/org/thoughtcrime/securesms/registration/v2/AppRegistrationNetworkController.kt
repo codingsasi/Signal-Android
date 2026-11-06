@@ -20,6 +20,7 @@ import org.signal.core.models.AccountEntropyPool
 import org.signal.core.models.MasterKey
 import org.signal.core.models.ServiceId.ACI
 import org.signal.core.util.Util
+import org.signal.core.util.eventbus.EventBus
 import org.signal.core.util.logging.Log
 import org.signal.libsignal.net.RequestResult
 import org.signal.libsignal.protocol.IdentityKey
@@ -81,6 +82,8 @@ import org.signal.registration.NetworkController.SetRegistrationLockError
 import org.signal.registration.NetworkController.VerifyBackupKeyError
 import org.signal.registration.ReceiptCredentialResult
 import org.signal.registration.proto.RegistrationProvisionMessage
+import org.signal.remoteconfig.RemoteConfig
+import org.signal.storage.keyvalue.PhoneNumberPrivacyValues
 import org.thoughtcrime.securesms.BuildConfig
 import org.thoughtcrime.securesms.backup.v2.BackupRepository
 import org.thoughtcrime.securesms.backup.v2.RestoreTimestampResult
@@ -89,6 +92,7 @@ import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.gcm.FcmUtil
 import org.thoughtcrime.securesms.jobs.MultiDeviceProfileContentUpdateJob
 import org.thoughtcrime.securesms.jobs.MultiDeviceProfileKeyUpdateJob
+import org.thoughtcrime.securesms.jobs.MultiDeviceSyncRequestJob
 import org.thoughtcrime.securesms.jobs.ProfileUploadJob
 import org.thoughtcrime.securesms.jobs.RefreshAttributesJob
 import org.thoughtcrime.securesms.jobs.ResetSvrGuessCountJob
@@ -102,14 +106,13 @@ import org.thoughtcrime.securesms.profiles.ProfileName
 import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.registration.fcm.PushChallengeRequest
 import org.thoughtcrime.securesms.registration.ui.restore.StorageServiceRestore
+import org.thoughtcrime.securesms.registration.ui.restore.e164OrNull
+import org.thoughtcrime.securesms.registration.ui.restore.pniIdentityKeyPair
 import org.thoughtcrime.securesms.registration.util.RegistrationUtil
 import org.thoughtcrime.securesms.registration.viewmodel.SvrAuthCredentialSet
 import org.thoughtcrime.securesms.util.Environment
-import org.thoughtcrime.securesms.util.RemoteConfig
 import org.whispersystems.signalservice.api.SvrNoDataException
 import org.whispersystems.signalservice.api.link.TransferArchiveResponse
-import org.whispersystems.signalservice.api.messages.multidevice.RequestMessage
-import org.whispersystems.signalservice.api.messages.multidevice.SignalServiceSyncMessage
 import org.whispersystems.signalservice.api.provisioning.ProvisioningSocket
 import org.whispersystems.signalservice.api.svr.SecureValueRecovery.BackupResponse
 import org.whispersystems.signalservice.internal.crypto.SecondaryProvisioningCipher
@@ -120,6 +123,9 @@ import java.io.Closeable
 import java.io.IOException
 import java.security.SecureRandom
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -193,7 +199,8 @@ class AppRegistrationNetworkController(
     fcmToken: String?,
     skipDeviceTransfer: Boolean,
     aci: ACI?,
-    totp: Int?
+    totp: Int?,
+    webAuthnResponse: String?
   ): RequestResult<RegisterAccountResponse, RegisterAccountError> {
     return registrationApi.registerAccount(
       e164 = e164,
@@ -207,7 +214,8 @@ class AppRegistrationNetworkController(
       fcmToken = fcmToken,
       skipDeviceTransfer = skipDeviceTransfer,
       aci = aci,
-      totp = totp
+      totp = totp,
+      webAuthnResponse = webAuthnResponse
     )
   }
 
@@ -261,24 +269,19 @@ class AppRegistrationNetworkController(
 
   override suspend fun awaitPushChallengeToken(): String? = withContext(Dispatchers.IO) {
     try {
-      val latch = java.util.concurrent.CountDownLatch(1)
-      val challenge = java.util.concurrent.atomic.AtomicReference<String>()
+      val latch = CountDownLatch(1)
+      val challenge = AtomicReference<String>()
 
-      val subscriber = object {
-        @org.greenrobot.eventbus.Subscribe(threadMode = org.greenrobot.eventbus.ThreadMode.POSTING)
-        fun onChallengeEvent(event: PushChallengeRequest.PushChallengeEvent) {
-          challenge.set(event.challenge)
-          latch.countDown()
-        }
+      val subscription = EventBus.default.subscribe<PushChallengeRequest.PushChallengeEvent> { event ->
+        challenge.set(event.challenge)
+        latch.countDown()
       }
 
-      val eventBus = org.greenrobot.eventbus.EventBus.getDefault()
-      eventBus.register(subscriber)
       try {
-        latch.await(PUSH_REQUEST_TIMEOUT, java.util.concurrent.TimeUnit.MILLISECONDS)
+        latch.await(PUSH_REQUEST_TIMEOUT, TimeUnit.MILLISECONDS)
         challenge.get()
       } finally {
-        eventBus.unregister(subscriber)
+        subscription.unsubscribe()
       }
     } catch (e: Exception) {
       Log.w(TAG, "Failed to await push challenge token", e)
@@ -363,11 +366,11 @@ class AppRegistrationNetworkController(
       return@withContext RequestResult.NonSuccess(SetRegistrationLockError.NoPinSet)
     }
 
-    SignalNetwork.account.enableRegistrationLock(masterKey)
+    SignalNetwork.accountApi.enableRegistrationLock(masterKey)
   }
 
   override suspend fun disableRegistrationLock(): RequestResult<Unit, SetRegistrationLockError> = withContext(Dispatchers.IO) {
-    SignalNetwork.account.disableRegistrationLock()
+    SignalNetwork.accountApi.disableRegistrationLock()
   }
 
   override suspend fun getSvrCredentials(): RequestResult<SvrCredentials, GetSvrCredentialsError> = withContext(Dispatchers.IO) {
@@ -392,7 +395,7 @@ class AppRegistrationNetworkController(
   override suspend fun setAccountAttributes(
     attributes: AccountAttributes
   ): RequestResult<Unit, SetAccountAttributesError> = withContext(Dispatchers.IO) {
-    when (val result = SignalNetwork.account.setAccountAttributes(attributes.toServiceAccountAttributes())) {
+    when (val result = SignalNetwork.accountApi.setAccountAttributes(attributes.toServiceAccountAttributes())) {
       is NetworkResult.Success -> RequestResult.Success(Unit)
       is NetworkResult.StatusCodeError -> {
         when (result.code) {
@@ -409,7 +412,7 @@ class AppRegistrationNetworkController(
   override suspend fun getRemoteBackupInfo(aep: AccountEntropyPool): RequestResult<NetworkController.GetBackupInfoResponse, NetworkController.GetBackupInfoError> = withContext(Dispatchers.IO) {
     val aci = SignalStore.account.aci ?: return@withContext RequestResult.ApplicationError(IllegalStateException("ACI not available"))
 
-    AppDependencies.archiveService
+    SignalNetwork.archiveService
       .getMessageBackupInfoForKey(aci, aep.deriveMessageBackupKey())
       .fold(
         ifRight = { info ->
@@ -431,7 +434,7 @@ class AppRegistrationNetworkController(
     val aci = SignalStore.account.aci ?: return@withContext RequestResult.ApplicationError(IllegalStateException("ACI not available"))
 
     // Uses API directly because ArchiveService uses stored key
-    when (val result = SignalNetwork.archiveV2.triggerBackupIdReservation(messageBackupKey = aep.deriveMessageBackupKey(), mediaRootBackupKey = null, aci = aci)) {
+    when (val result = SignalNetwork.archiveApiV2.triggerBackupIdReservation(messageBackupKey = aep.deriveMessageBackupKey(), mediaRootBackupKey = null, aci = aci)) {
       is RequestResult.Success -> {
         // Anything cached was issued against the backup-id we just replaced, so it can never verify.
         SignalStore.backup.messageCredentials.clearAll()
@@ -476,9 +479,9 @@ class AppRegistrationNetworkController(
     }
 
     SignalStore.phoneNumberPrivacy.phoneNumberDiscoverabilityMode = if (discoverableByPhoneNumber) {
-      org.thoughtcrime.securesms.keyvalue.PhoneNumberPrivacyValues.PhoneNumberDiscoverabilityMode.DISCOVERABLE
+      PhoneNumberPrivacyValues.PhoneNumberDiscoverabilityMode.DISCOVERABLE
     } else {
-      org.thoughtcrime.securesms.keyvalue.PhoneNumberPrivacyValues.PhoneNumberDiscoverabilityMode.NOT_DISCOVERABLE
+      PhoneNumberPrivacyValues.PhoneNumberDiscoverabilityMode.NOT_DISCOVERABLE
     }
 
     AppDependencies.jobManager
@@ -492,11 +495,11 @@ class AppRegistrationNetworkController(
   }
 
   override suspend fun reserveUsername(nickname: String, discriminator: String?): RequestResult<Username, ReserveUsernameError> {
-    return AppDependencies.usernameService.reserveUsername(nickname, discriminator)
+    return SignalNetwork.usernameService.reserveUsername(nickname, discriminator)
   }
 
   override suspend fun confirmUsername(username: Username): RequestResult<ConfirmedUsername, ConfirmUsernameError> {
-    return AppDependencies.usernameService.confirmUsername(username)
+    return SignalNetwork.usernameService.confirmUsername(username)
   }
 
   override suspend fun restoreAccountRecord(
@@ -523,7 +526,7 @@ class AppRegistrationNetworkController(
   ): RequestResult<Long, NetworkController.GetBackupInfoError> = withContext(Dispatchers.IO) {
     val aci = SignalStore.account.aci ?: return@withContext RequestResult.ApplicationError(IllegalStateException("ACI not available"))
 
-    val location = when (val result = AppDependencies.archiveService.getMessageBackupFileLocationForKey(aci, aep.deriveMessageBackupKey())) {
+    val location = when (val result = SignalNetwork.archiveService.getMessageBackupFileLocationForKey(aci, aep.deriveMessageBackupKey())) {
       is Either.Right -> result.value
       is Either.Left -> return@withContext result.value.toGetBackupInfoError()
     }
@@ -610,14 +613,23 @@ class AppRegistrationNetworkController(
 
         if (result is SecondaryProvisioningCipher.ProvisioningDecryptResult.Success) {
           val msg = result.message
+          val aci = ACI.parseOrNull(msg.aci)
+
+          if (aci == null) {
+            Log.w(TAG, "[startProvisioning] Provisioning message was missing a valid ACI")
+            trySend(ProvisioningEvent.Error(IOException("Provisioning message was missing a valid ACI")))
+            return@start
+          }
+
           trySend(
             ProvisioningEvent.MessageReceived(
               ProvisioningMessage(
                 accountEntropyPool = msg.accountEntropyPool,
-                e164 = msg.e164,
+                aci = aci,
+                e164 = msg.e164OrNull,
                 pin = msg.pin,
                 aciIdentityKeyPair = IdentityKeyPair(IdentityKey(msg.aciIdentityKeyPublic.toByteArray()), ECPrivateKey(msg.aciIdentityKeyPrivate.toByteArray())),
-                pniIdentityKeyPair = IdentityKeyPair(IdentityKey(msg.pniIdentityKeyPublic.toByteArray()), ECPrivateKey(msg.pniIdentityKeyPrivate.toByteArray())),
+                pniIdentityKeyPair = msg.pniIdentityKeyPair,
                 platform = when (msg.platform) {
                   RegistrationProvisionMessage.Platform.ANDROID -> ProvisioningMessage.Platform.ANDROID
                   RegistrationProvisionMessage.Platform.IOS -> ProvisioningMessage.Platform.IOS
@@ -706,7 +718,8 @@ class AppRegistrationNetworkController(
                 ephemeralBackupKey = msg.ephemeralBackupKey,
                 accountEntropyPool = msg.accountEntropyPool,
                 mediaRootBackupKey = msg.mediaRootBackupKey,
-                readReceipts = msg.readReceipts
+                readReceipts = msg.readReceipts,
+                authCredentialSalt = msg.authCredentialSalt
               )
             )
           )
@@ -769,10 +782,9 @@ class AppRegistrationNetworkController(
   }
 
   override suspend fun onLinkedDeviceRegistered() = withContext(Dispatchers.IO) {
-    try {
-      RemoteConfig.refreshSync()
-    } catch (e: IOException) {
-      Log.w(TAG, "[onLinkedDeviceRegistered] Failed to refresh remote config.", e)
+    val remoteConfigResult = RemoteConfig.refresh()
+    if (remoteConfigResult !is RequestResult.Success) {
+      Log.w(TAG, "[onLinkedDeviceRegistered] Failed to refresh remote config. Result: $remoteConfigResult")
     }
 
     for (type in SyncMessage.Request.Type.entries) {
@@ -780,35 +792,8 @@ class AppRegistrationNetworkController(
         continue
       }
 
-      Log.i(TAG, "[onLinkedDeviceRegistered] Sending sync request for $type")
-      try {
-        retryWithBackoff {
-          AppDependencies.signalServiceMessageSender.sendSyncMessage(
-            SignalServiceSyncMessage.forRequest(RequestMessage(SyncMessage.Request(type = type)))
-          )
-        }
-      } catch (e: CancellationException) {
-        throw e
-      } catch (e: Exception) {
-        Log.w(TAG, "[onLinkedDeviceRegistered] Failed to send sync request for $type after retries; continuing.", e)
-      }
-    }
-  }
-
-  private suspend fun <T> retryWithBackoff(maxAttempts: Int = 3, initialDelay: Duration = 1.seconds, block: suspend () -> T): T {
-    var attempt = 0
-    while (true) {
-      try {
-        return block()
-      } catch (e: IOException) {
-        attempt++
-        if (attempt >= maxAttempts) {
-          throw e
-        }
-        val backoff = initialDelay * attempt
-        Log.w(TAG, "[retryWithBackoff] Attempt $attempt failed; retrying in $backoff.", e)
-        delay(backoff)
-      }
+      Log.i(TAG, "[onLinkedDeviceRegistered] Enqueuing sync request for $type")
+      AppDependencies.jobManager.add(MultiDeviceSyncRequestJob(type))
     }
   }
 
@@ -853,7 +838,7 @@ class AppRegistrationNetworkController(
     while (timeRemaining > 0 && coroutineContext.isActive) {
       Log.d(TAG, "[awaitTransferArchiveFromPrimary] Willing to wait for $timeRemaining ms...")
 
-      when (val result = SignalNetwork.linkDevice.waitForPrimaryDevice(timeout = 60.seconds)) {
+      when (val result = SignalNetwork.linkDeviceApi.waitForPrimaryDevice(timeout = 60.seconds)) {
         is NetworkResult.Success -> {
           Log.i(TAG, "[awaitTransferArchiveFromPrimary] Primary responded (hasArchive=${result.result.hasArchive}, error=${result.result.error})")
           return result.result
@@ -873,8 +858,9 @@ class AppRegistrationNetworkController(
               return null
             }
             429 -> {
-              Log.w(TAG, "[awaitTransferArchiveFromPrimary] Rate-limited; will retry after ${result.retryAfter()}.")
-              result.retryAfter()?.let { delay(it) }
+              val retryAfter = result.retryAfter() ?: RETRY_BACKOFF
+              Log.w(TAG, "[awaitTransferArchiveFromPrimary] Rate-limited; will retry after $retryAfter.")
+              delay(retryAfter)
             }
             else -> {
               Log.w(TAG, "[awaitTransferArchiveFromPrimary] Unexpected status ${result.code}; will retry after $RETRY_BACKOFF.")

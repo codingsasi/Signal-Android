@@ -58,7 +58,8 @@ class SignalLoginInfoViewModelTest {
       repository = mockRepository,
       parentState = MutableStateFlow(RegistrationFlowState(aci = ACI_VALUE, accountEntropyPool = aep)),
       parentEventEmitter = parentEventEmitter,
-      isPasswordManagerAvailable = true
+      isPasswordManagerAvailable = true,
+      isGooglePasswordManagerDefault = false
     )
   }
 
@@ -93,24 +94,79 @@ class SignalLoginInfoViewModelTest {
   }
 
   @Test
-  fun `SaveToPasswordManagerClicked hands the login to the password manager`() = runTest(testDispatcher) {
-    val actions = mutableListOf<SignalLoginInfoScreenActions>()
-    backgroundScope.launch { viewModel.actions.toList(actions) }
-
-    viewModel.onEvent(SignalLoginInfoScreenEvents.SaveToPasswordManagerClicked)
-
-    assertThat(actions).containsExactly(SignalLoginInfoScreenActions.SaveToPasswordManager(accountId = ACCOUNT_ID, recoveryKey = aep.displayValue))
-    assertThat(viewModel.state.value.showSpinner).isEqualTo(true)
-  }
-
-  @Test
-  fun `SaveToPasswordManagerClicked without a login in the flow state shows the unknown error dialog`() = runTest(testDispatcher) {
+  fun `SaveToPasswordManagerConfirmed without a login in the flow state shows the unknown error dialog`() = runTest(testDispatcher) {
     var emittedState: SignalLoginInfoState? = null
 
-    viewModel.applyEvent(SignalLoginInfoState(), SignalLoginInfoScreenEvents.SaveToPasswordManagerClicked, {}) { emittedState = it }
+    viewModel.applyEvent(SignalLoginInfoState(isPasswordManagerAvailable = true), SignalLoginInfoScreenEvents.SaveToPasswordManagerConfirmed, {}) { emittedState = it }
 
     assertThat(emittedState?.dialogs?.unknownError).isEqualTo(true)
     assertThat(emittedState?.showSpinner).isEqualTo(false)
+  }
+
+  @Test
+  fun `SaveToPasswordManagerClicked without a password manager tells the user there isn't one`() = runTest(testDispatcher) {
+    val actions = mutableListOf<SignalLoginInfoScreenActions>()
+    backgroundScope.launch { viewModel.actions.toList(actions) }
+    var emittedState: SignalLoginInfoState? = null
+
+    viewModel.applyEvent(SignalLoginInfoState(isPasswordManagerAvailable = false), SignalLoginInfoScreenEvents.SaveToPasswordManagerClicked, {}) { emittedState = it }
+
+    assertThat(actions).containsExactly(SignalLoginInfoScreenActions.ShowNoPasswordManagerAvailable)
+    assertThat(emittedState).isEqualTo(null)
+  }
+
+  @Test
+  fun `SaveToPasswordManagerClicked asks the user to confirm the save`() = runTest(testDispatcher) {
+    val actions = mutableListOf<SignalLoginInfoScreenActions>()
+    backgroundScope.launch { viewModel.actions.toList(actions) }
+    var emittedState: SignalLoginInfoState? = null
+
+    viewModel.applyEvent(
+      SignalLoginInfoState(aci = ACI_VALUE, aep = aep, isPasswordManagerAvailable = true),
+      SignalLoginInfoScreenEvents.SaveToPasswordManagerClicked,
+      {}
+    ) { emittedState = it }
+
+    assertThat(actions).isEmpty()
+    assertThat(emittedState?.dialogs?.saveToPasswordManagerConfirmation).isEqualTo(true)
+  }
+
+  @Test
+  fun `SaveToPasswordManagerConfirmed hands the login to the password manager`() = runTest(testDispatcher) {
+    val actions = mutableListOf<SignalLoginInfoScreenActions>()
+    backgroundScope.launch { viewModel.actions.toList(actions) }
+    var emittedState: SignalLoginInfoState? = null
+
+    viewModel.applyEvent(
+      SignalLoginInfoState(
+        aci = ACI_VALUE,
+        aep = aep,
+        isPasswordManagerAvailable = true,
+        dialogs = SignalLoginInfoState.Dialogs(saveToPasswordManagerConfirmation = true)
+      ),
+      SignalLoginInfoScreenEvents.SaveToPasswordManagerConfirmed,
+      {}
+    ) { emittedState = it }
+
+    assertThat(actions).containsExactly(SignalLoginInfoScreenActions.SaveToPasswordManager(accountId = ACCOUNT_ID, recoveryKey = aep.displayValue))
+    assertThat(emittedState?.dialogs?.saveToPasswordManagerConfirmation).isEqualTo(false)
+    assertThat(emittedState?.showSpinner).isEqualTo(true)
+  }
+
+  @Test
+  fun `SaveToPasswordManagerConfirmationDismissed hides the confirmation without saving`() = runTest(testDispatcher) {
+    val actions = mutableListOf<SignalLoginInfoScreenActions>()
+    backgroundScope.launch { viewModel.actions.toList(actions) }
+    var emittedState: SignalLoginInfoState? = null
+
+    viewModel.applyEvent(
+      SignalLoginInfoState(dialogs = SignalLoginInfoState.Dialogs(saveToPasswordManagerConfirmation = true)),
+      SignalLoginInfoScreenEvents.SaveToPasswordManagerConfirmationDismissed,
+      {}
+    ) { emittedState = it }
+
+    assertThat(actions).isEmpty()
+    assertThat(emittedState?.dialogs?.saveToPasswordManagerConfirmation).isEqualTo(false)
   }
 
   @Test
@@ -269,6 +325,32 @@ class SignalLoginInfoViewModelTest {
     viewModel.applyEvent(SignalLoginInfoState(), SignalLoginInfoScreenEvents.SaveManuallyClicked, { parentEvents.add(it) }) {}
 
     assertThat(parentEvents).containsExactly(RegistrationFlowEvent.NavigateToScreen(RegistrationRoute.SignalLoginViewDetailsForManualSave))
+  }
+
+  @Test
+  fun `SaveManuallyClicked from the not-confirmed dialog clears it on the way out`() = runTest(testDispatcher) {
+    val parentEvents = mutableListOf<RegistrationFlowEvent>()
+    var emittedState: SignalLoginInfoState? = null
+
+    viewModel.applyEvent(
+      SignalLoginInfoState(dialogs = SignalLoginInfoState.Dialogs(saveNotConfirmed = true)),
+      SignalLoginInfoScreenEvents.SaveManuallyClicked,
+      { parentEvents.add(it) }
+    ) { emittedState = it }
+
+    assertThat(emittedState?.dialogs).isEqualTo(SignalLoginInfoState.Dialogs())
+    assertThat(parentEvents).containsExactly(RegistrationFlowEvent.NavigateToScreen(RegistrationRoute.SignalLoginViewDetailsForManualSave))
+  }
+
+  @Test
+  fun `SaveManuallyClicked leaves nothing behind in the view model that outlives the navigation`() = runTest(testDispatcher) {
+    viewModel.onEvent(SignalLoginInfoScreenEvents.SavedCredentialRetrieved(null))
+
+    assertThat(viewModel.state.value.dialogs.saveNotConfirmed).isEqualTo(true)
+
+    viewModel.onEvent(SignalLoginInfoScreenEvents.SaveManuallyClicked)
+
+    assertThat(viewModel.state.value.dialogs.saveNotConfirmed).isEqualTo(false)
   }
 
   @Test

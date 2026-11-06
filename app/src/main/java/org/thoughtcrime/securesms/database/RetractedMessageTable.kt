@@ -6,10 +6,10 @@
 package org.thoughtcrime.securesms.database
 
 import android.content.Context
-import org.signal.core.util.exists
-import org.signal.core.util.insertInto
+import org.signal.core.database.exists
+import org.signal.core.database.insertInto
 import org.signal.core.util.readToSingleLong
-import org.signal.core.util.select
+import org.signal.core.database.select
 
 /**
  * Records that the sender asked for a message to be deleted for everyone while this device was configured

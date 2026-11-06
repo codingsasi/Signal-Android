@@ -20,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.os.bundleOf
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,9 +31,11 @@ import com.google.android.gms.common.GoogleApiAvailability
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx3.asFlowable
+import org.signal.core.ui.biometrics.rememberBiometricsAuthentication
 import org.signal.core.ui.compose.CollectActions
 import org.signal.core.ui.compose.ComposeFragment
 import org.signal.core.ui.compose.Dialogs
+import org.signal.core.ui.viewModel
 import org.signal.core.util.Result
 import org.signal.core.util.Util
 import org.signal.core.util.concurrent.SignalDispatchers
@@ -46,7 +47,6 @@ import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.backup.DeletionState
 import org.thoughtcrime.securesms.backup.v2.MessageBackupTier
 import org.thoughtcrime.securesms.components.settings.app.account.signallogin.SignalLoginViewDetailsAction
-import org.thoughtcrime.securesms.components.settings.app.account.signallogin.SignalLoginViewDetailsViewModel
 import org.thoughtcrime.securesms.components.settings.app.subscription.donate.InAppPaymentCheckoutDelegate
 import org.thoughtcrime.securesms.compose.Nav
 import org.thoughtcrime.securesms.database.InAppPaymentTable
@@ -54,7 +54,7 @@ import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.util.CommunicationActions
 import org.thoughtcrime.securesms.util.PlayStoreUtil
-import org.thoughtcrime.securesms.util.viewModel
+import org.signal.signallogin.R as SignalLoginR
 
 /**
  * Handles the selection, payment, and changing of a user's backup tier.
@@ -65,7 +65,6 @@ class MessageBackupsFlowFragment : ComposeFragment(), InAppPaymentCheckoutDelega
 
     @VisibleForTesting
     const val TIER = "tier"
-    const val CLIPBOARD_TIMEOUT_SECONDS = 60
 
     private const val PDF_MIME_TYPE = "application/pdf"
 
@@ -85,13 +84,18 @@ class MessageBackupsFlowFragment : ComposeFragment(), InAppPaymentCheckoutDelega
     )
   }
 
-  private val signalLoginViewDetailsViewModel: SignalLoginViewDetailsViewModel by viewModels()
+  private val signalLoginDetailsViewModel: MessageBackupsSignalLoginDetailsViewModel by viewModel {
+    MessageBackupsSignalLoginDetailsViewModel(
+      isPasswordManagerAvailable = SignalCredentialManager.isSupported(requireContext()),
+      isGooglePasswordManagerDefault = SignalCredentialManager.isGooglePasswordManagerDefault(requireContext())
+    )
+  }
 
   private val savePdfLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument(PDF_MIME_TYPE)) { uri: Uri? ->
     if (uri != null) {
       val context = requireContext().applicationContext
       lifecycleScope.launch {
-        val result = SignalLoginPdfRenderer.renderTo(context, uri, signalLoginViewDetailsViewModel.state.value.accountKey, signalLoginViewDetailsViewModel.state.value.recoveryKeyGroups)
+        val result = SignalLoginPdfRenderer.renderTo(context, uri, signalLoginDetailsViewModel.state.value.accountKey, signalLoginDetailsViewModel.state.value.recoveryKeyGroups)
         if (result is Result.Failure) {
           Toast.makeText(context, result.failure.userMessageRes, Toast.LENGTH_LONG).show()
         }
@@ -157,9 +161,24 @@ class MessageBackupsFlowFragment : ComposeFragment(), InAppPaymentCheckoutDelega
       startDestination = state.startScreen.name
     ) {
       composable(route = MessageBackupsStage.Route.EDUCATION.name) {
+        val context = LocalContext.current
+        val biometrics = rememberBiometricsAuthentication(
+          promptTitle = stringResource(R.string.MessageBackupsFlowFragment__unlock_to_set_up_secure_backups),
+          educationSheetMessage = stringResource(R.string.MessageBackupsFlowFragment__to_set_up_secure_backups_confirm_its_you),
+          onAuthenticationFailed = {
+            Toast.makeText(context, R.string.MessageBackupsFlowFragment__authentication_required, Toast.LENGTH_SHORT).show()
+          }
+        )
+
         MessageBackupsEducationScreen(
           onNavigationClick = viewModel::goToPreviousStage,
-          onEnableBackups = viewModel::goToNextStage,
+          onEnableBackups = {
+            if (state.isPhoneNumberless) {
+              biometrics.withBiometricsAuthentication(viewModel::goToNextStage)
+            } else {
+              viewModel.goToNextStage()
+            }
+          },
           onNotNow = viewModel::goToPreviousStage
         )
       }
@@ -179,11 +198,13 @@ class MessageBackupsFlowFragment : ComposeFragment(), InAppPaymentCheckoutDelega
       composable(route = MessageBackupsStage.Route.BACKUP_KEY_RECORD.name) {
         val context = LocalContext.current
         val passwordManagerSettingsIntent = SignalCredentialManager.getSettingsIntent(requireContext())
+        val isGooglePasswordManagerDefault = remember { SignalCredentialManager.isGooglePasswordManagerDefault(requireContext()) }
 
         MessageBackupsKeyRecordScreen(
           backupKey = state.accountEntropyPool.displayValue,
           keySaveState = state.backupKeySaveState,
           canOpenPasswordManagerSettings = passwordManagerSettingsIntent != null,
+          isGooglePasswordManagerDefault = isGooglePasswordManagerDefault,
           onNavigationClick = viewModel::goToPreviousStage,
           mode = remember {
             MessageBackupsKeyRecordMode.Passkey(
@@ -192,7 +213,7 @@ class MessageBackupsFlowFragment : ComposeFragment(), InAppPaymentCheckoutDelega
               onSaveSuccessful = viewModel::onBackupKeySavedToPasswordManager
             )
           },
-          onCopyToClipboardClick = { Util.copyToClipboard(context, it, CLIPBOARD_TIMEOUT_SECONDS) },
+          onCopyToClipboardClick = { Util.copyToClipboardSensitive(context, it) },
           onRequestSaveToPasswordManager = viewModel::onBackupKeySaveRequested,
           onConfirmSaveToPasswordManager = viewModel::onBackupKeySaveConfirmed,
           onSaveStateCleared = viewModel::onBackupKeySaveStateCleared,
@@ -205,14 +226,16 @@ class MessageBackupsFlowFragment : ComposeFragment(), InAppPaymentCheckoutDelega
       composable(route = MessageBackupsStage.Route.BACKUP_KEY_RECORD_MANUALLY.name) {
         val context = LocalContext.current
         val passwordManagerSettingsIntent = SignalCredentialManager.getSettingsIntent(requireContext())
+        val isGooglePasswordManagerDefault = remember { SignalCredentialManager.isGooglePasswordManagerDefault(requireContext()) }
 
         MessageBackupsKeyRecordScreen(
           backupKey = state.accountEntropyPool.displayValue,
           keySaveState = state.backupKeySaveState,
           canOpenPasswordManagerSettings = passwordManagerSettingsIntent != null,
+          isGooglePasswordManagerDefault = isGooglePasswordManagerDefault,
           onNavigationClick = viewModel::goToPreviousStage,
           mode = remember { MessageBackupsKeyRecordMode.Next(viewModel::goToNextStage) },
-          onCopyToClipboardClick = { Util.copyToClipboard(context, it, CLIPBOARD_TIMEOUT_SECONDS) },
+          onCopyToClipboardClick = { Util.copyToClipboardSensitive(context, it) },
           onRequestSaveToPasswordManager = viewModel::onBackupKeySaveRequested,
           onConfirmSaveToPasswordManager = viewModel::onBackupKeySaveConfirmed,
           onSaveToPasswordManagerComplete = viewModel::onBackupKeySaveCompleted,
@@ -246,13 +269,13 @@ class MessageBackupsFlowFragment : ComposeFragment(), InAppPaymentCheckoutDelega
       }
 
       composable(route = MessageBackupsStage.Route.SIGNAL_LOGIN_VIEW_DETAILS.name) {
-        val signalLoginState by signalLoginViewDetailsViewModel.state.collectAsStateWithLifecycle()
+        val signalLoginState by signalLoginDetailsViewModel.state.collectAsStateWithLifecycle()
 
-        CollectActions(signalLoginViewDetailsViewModel.actions) { action -> handleSignalLoginViewDetailsAction(action) }
+        CollectActions(signalLoginDetailsViewModel.actions) { action -> handleSignalLoginViewDetailsAction(action) }
 
         SignalLoginViewDetailsScreen(
           state = signalLoginState,
-          onEvent = signalLoginViewDetailsViewModel::onEvent
+          onEvent = signalLoginDetailsViewModel::onEvent
         )
       }
 
@@ -324,20 +347,26 @@ class MessageBackupsFlowFragment : ComposeFragment(), InAppPaymentCheckoutDelega
     }
   }
 
-  private fun handleSignalLoginViewDetailsAction(action: SignalLoginViewDetailsAction) {
+  private fun handleSignalLoginViewDetailsAction(action: SignalLoginViewDetailsAction.Shared) {
     when (action) {
       SignalLoginViewDetailsAction.NavigateBack -> viewModel.goToPreviousStage()
       SignalLoginViewDetailsAction.LaunchSaveToPasswordManager -> {
         lifecycleScope.launch {
           SignalCredentialManager.saveCredential(
             activityContext = requireActivity(),
-            username = signalLoginViewDetailsViewModel.state.value.accountKey,
-            password = signalLoginViewDetailsViewModel.state.value.recoveryKey
+            username = signalLoginDetailsViewModel.state.value.accountKey,
+            password = signalLoginDetailsViewModel.state.value.recoveryKey
           )
         }
       }
+
+      SignalLoginViewDetailsAction.ShowNoPasswordManagerAvailable -> {
+        Toast.makeText(requireContext(), SignalLoginR.string.SignalLoginViewDetailsScreen__no_password_manager_available, Toast.LENGTH_LONG).show()
+      }
+
       SignalLoginViewDetailsAction.LaunchSaveAsPdf -> savePdfLauncher.launch(SignalLoginPdfRenderer.suggestedFileName(requireContext()))
-      is SignalLoginViewDetailsAction.CopyTextToClipboard -> Util.copyToClipboard(requireContext(), action.text, CLIPBOARD_TIMEOUT_SECONDS)
+      SignalLoginViewDetailsAction.OpenDoNotShareLearnMoreArticle -> CommunicationActions.openBrowserLink(requireContext(), getString(R.string.recovery_key_phishing_support_url))
+      is SignalLoginViewDetailsAction.CopyTextToClipboard -> Util.copyToClipboardSensitive(requireContext(), action.text)
     }
   }
 
